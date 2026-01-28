@@ -7,7 +7,7 @@
     <title>3D Sprint Lottery</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      // Vercel/Browser shim for process.env
+      // Browser shim for process.env (Vercel Production)
       window.process = { env: { NODE_ENV: 'production' } };
     </script>
     <style>
@@ -22,7 +22,7 @@
         display: block;
       }
     </style>
-  <script type="importmap">
+    <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@19.0.0",
@@ -34,7 +34,7 @@
   }
 }
 </script>
-</head>
+  </head>
   <body>
     <div id="root"></div>
   </body>
