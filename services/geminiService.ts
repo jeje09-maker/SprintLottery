@@ -1,49 +1,42 @@
 
-import { GoogleGenAI } from "@google/genai";
+/**
+ * Local Commentary Engine
+ * Replaces external API calls to ensure stable deployment on Vercel
+ * without requiring API keys or handling network timeouts.
+ */
 
 export const generateRunnerNames = async (count: number): Promise<string[]> => {
   return Array.from({ length: count }, (_, i) => `Athlete ${i + 1}`);
 };
 
-/**
- * Generates dynamic, high-energy race commentary based on current runner progress.
- * Includes fallback logic for API quota exhaustion (429).
- */
 export const getRaceCommentary = async (runners: any[], status: string): Promise<string> => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) return "경기가 뜨겁게 달아오르고 있습니다!";
+  if (status !== 'RACING') return "경기가 곧 시작됩니다. 선수들이 준비 중입니다!";
 
-  const ai = new GoogleGenAI({ apiKey });
-  
   const sorted = [...runners].sort((a, b) => b.progress - a.progress);
   const leader = sorted[0];
-  const runnerCount = runners.length;
+  const progressPercent = Math.round((leader?.progress || 0) * 100);
   
-  const prompt = `You are a world-class stadium sports commentator narrating a live race. 
-  Race Status: ${status}
-  Runners on track: ${runnerCount}
-  Current leader: Athlete ${leader?.id} with ${Math.round((leader?.progress || 0) * 100)}% of the course completed.
-  
-  Provide a short, intense, and exciting one-sentence commentary in Korean.
-  The commentary should feel live and immediate. Do not include English.`;
+  const midRacePhraces = [
+    `현재 1위는 ${leader?.id}번 선수! 엄청난 속도입니다!`,
+    `${leader?.id}번 선수, 선두를 유지하며 코너를 공략합니다!`,
+    "중반전으로 접어들며 순위 싸움이 치열해지고 있습니다!",
+    "관중들의 함성이 커지고 있습니다. 정말 박진감 넘치는 레이스네요!",
+    "선두권 선수들, 서로의 페이스를 체크하며 기회를 엿보고 있습니다."
+  ];
 
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-    });
-    return response.text?.trim() || "레이스가 절정에 달하고 있습니다!";
-  } catch (error: any) {
-    // 429 Resource Exhausted 또는 기타 API 오류 시 기본 메시지 반환
-    console.warn("Gemini Commentary Quota/Error:", error?.message || error);
-    
-    const fallbacks = [
-      "선수들이 마지막 스퍼트를 올리고 있습니다!",
-      "관중석의 함성이 경기장을 가득 채웁니다!",
-      "치열한 선두 다툼이 이어지고 있습니다!",
-      "역전에 역전! 한 치 앞을 알 수 없는 승부입니다!",
-      "결승선이 보이기 시작합니다!"
-    ];
-    return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+  const finalStretchPhrases = [
+    `마지막 직선 코스! ${leader?.id}번 선수가 치고 나갑니다!`,
+    "결승선이 보입니다! 마지막 스퍼트를 올리는 선수들!",
+    "과연 영광의 1위는 누가 차지할 것인가!",
+    "혼신의 힘을 다한 질주! 정말 드라마틱한 엔딩이 예상됩니다!",
+    `현재 선두 ${leader?.id}번! 하지만 뒤쪽에서 무섭게 추격해옵니다!`
+  ];
+
+  if (progressPercent < 30) {
+    return "초반 기세가 대단합니다! 모든 선수들이 힘차게 출발했습니다.";
+  } else if (progressPercent < 85) {
+    return midRacePhraces[Math.floor(Math.random() * midRacePhraces.length)];
+  } else {
+    return finalStretchPhrases[Math.floor(Math.random() * finalStretchPhrases.length)];
   }
 };

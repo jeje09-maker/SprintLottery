@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { Runner, RaceStatus } from '../types';
-import { createRunnerFrames, RunnerFrameSets } from './RunnerSprite';
+import { createRunnerFrames } from './RunnerSprite';
 
 interface RaceSceneProps {
   runners: Runner[];
@@ -98,14 +98,12 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
     const outerRadius = CURVE_RADIUS + trackWidth;
     const innerRadius = CURVE_RADIUS;
 
-    // Track
     const trackMat = new THREE.MeshStandardMaterial({ color: 0x800020 });
     const trackMesh = new THREE.Mesh(new THREE.ShapeGeometry(createStadiumShape(outerRadius), 128), trackMat);
     trackMesh.rotation.x = -Math.PI / 2;
     trackMesh.position.y = 0.05;
     scene.add(trackMesh);
 
-    // White Lines
     const lineMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
     for (let i = 0; i <= numLanes; i++) {
       const r = CURVE_RADIUS + i * LANE_WIDTH;
@@ -117,14 +115,12 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
       scene.add(lineMesh);
     }
 
-    // Interior Grass
     const turfMat = new THREE.MeshStandardMaterial({ color: 0x2e7d32, roughness: 0.9 });
     const turfMesh = new THREE.Mesh(new THREE.ShapeGeometry(createStadiumShape(innerRadius - 0.5), 64), turfMat);
     turfMesh.rotation.x = -Math.PI / 2;
     turfMesh.position.y = 0.1;
     scene.add(turfMesh);
 
-    // Finish Line
     const finishLinePos = CURVE_RADIUS + trackWidth / 2;
     const finishLine = new THREE.Mesh(new THREE.PlaneGeometry(5, trackWidth), new THREE.MeshStandardMaterial({ color: 0xffffff }));
     finishLine.rotation.x = -Math.PI / 2;
@@ -142,10 +138,9 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
         front: rawSets.front.map(f => textureLoader.load(f)),
         resting: rawSets.resting.map(f => textureLoader.load(f))
       };
-      // Initial sprite setup
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: textures.side[1], transparent: true }));
       sprite.scale.set(13, 13, 1);
-      sprite.position.y = 7.0; // 발이 묻히지 않도록 조정
+      sprite.position.y = 7.2; // 발이 트랙 속으로 묻히지 않도록 상향 조정
       group.add(sprite);
       scene.add(group);
       runnerGroups.set(runner.id, { group, sprite, textures });
@@ -166,7 +161,7 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
         const lastToRest = sorted.find(r => !r.isResting) || sorted[sorted.length - 1];
         const cameraTargetRunner = (leader.isResting ? lastToRest : leader) || leader;
 
-        // 결승선 카메라 활성화 시점 (90% 이상일 때 고정)
+        // 카메라 모드 결정 (사용자 요청: 코너 막 돌았을 때인 90% 지점 적용)
         const isFinishCameraActive = cameraTargetRunner.progress >= 0.90 && !cameraTargetRunner.isResting;
 
         runnersRef.current.forEach(runner => {
@@ -177,32 +172,30 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
             group.position.lerp(pathInfo.position, 0.25);
             
             if (runner.isResting) {
-              // 완전히 멈췄을 때
               sprite.material.map = textures.resting[0];
-              sprite.position.y = 5.5; // 서 있을 때 발 위치 최적화
+              sprite.position.y = 5.6; // 서 있을 때 발 위치 최적화
             } else {
-              // 달리는 애니메이션 프레임 (멈추기 전까지 유지)
+              // 사용자 요청: 서기 전까지는 달리는 모습을 유지
               const frameIdx = Math.floor((now * 0.03 + runner.bobOffset * 10) % (textures.side.length - 1)) + 1;
               
-              // 구간별 선수 방향 결정 로직
               if (runner.progress < 0.03) {
                 // 출발 직후: 옆모습
                 sprite.material.map = textures.side[frameIdx];
               } 
               else if (runner.progress >= 0.90) {
-                // 코너를 막 돌았을 때(90%)부터: 옆모습으로 전환하여 결승선 통과
+                // 사용자 요청: 코너를 막 돌았을 때(90%)부터 즉시 옆모습으로 전환
                 sprite.material.map = textures.side[frameIdx];
               }
               else if (isFinishCameraActive && runner.progress >= 0.80) {
-                // 카메라가 결승선을 향해 있고 선수가 달려오는 구간: 앞모습
+                // 카메라가 결승선을 향해 다가오는 짧은 구간: 앞모습
                 sprite.material.map = textures.front[frameIdx];
               }
               else {
-                // 그 외 일반 구간: 뒷모습 추격
+                // 일반 구간: 뒷모습 추격
                 sprite.material.map = textures.back[frameIdx];
               }
               
-              sprite.position.y = 7.0; // 달리는 중 발 위치 상향 조정 (묻힘 방지)
+              sprite.position.y = 7.2; // 달리는 중 발 높이 유지
             }
             sprite.scale.set(13, 13, 1);
           }
@@ -215,31 +208,26 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
           const pInfo = getPathData(cameraTargetRunner.progress, cameraTargetRunner.lane, cameraTargetRunner.laneOffset);
           
           if (cameraTargetRunner.progress < 0.03) {
-            // 출발 뷰
             targetPos.set(lm.position.x - 50, 30, lm.position.z + 100);
             targetLookAt.set(lm.position.x + 30, 15, lm.position.z - 10);
           } else if (isFinishCameraActive) {
-            // 결승선 고정 정면 뷰 (3초 일찍 전환)
+            // 결승선 고정 뷰
             targetPos.set(40, 25, finishLinePos + 80); 
             targetLookAt.set(0, 10, finishLinePos);
           } else {
-            // 메인 추격 뷰 (Chase Camera)
             const camDist = 70; 
             const camHeight = 40; 
             const tangent = new THREE.Vector3().copy(pInfo.tangent);
-            
             targetPos.copy(lm.position).sub(tangent.multiplyScalar(camDist)).add(new THREE.Vector3(0, camHeight, 0));
             targetLookAt.copy(lm.position).add(new THREE.Vector3(0, 15, 0));
           }
 
           camPosRef.current.lerp(targetPos, 0.04);
           lookAtRef.current.lerp(targetLookAt, 0.06);
-          
           camera.position.copy(camPosRef.current);
           camera.lookAt(lookAtRef.current);
         }
       } else {
-        // IDLE 상태 뷰
         const startZ = CURVE_RADIUS + trackWidth / 2;
         const idlePos = new THREE.Vector3(-180, 50, startZ + 150);
         const idleLook = new THREE.Vector3(-60, 10, startZ);
