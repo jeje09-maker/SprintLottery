@@ -1,0 +1,5 @@
+{
+  "name": "3D Sprint Lottery",
+  "description": "A high-fidelity 3D racing simulator for random draws. Watch procedurally generated marathon runners compete on a 3D track to determine the winners of your lottery.",
+  "requestFramePermissions": []
+}
