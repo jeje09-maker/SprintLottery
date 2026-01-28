@@ -38,7 +38,7 @@ const getPathData = (progress: number, lane: number, laneOffset: number) => {
   } else {
     const theta = (s - (2 * L + Math.PI * R)) / R;
     x = -L / 2 - R * Math.sin(theta); z = -R * Math.cos(theta);
-    tx = -Math.cos(theta); tz = Math.sin(theta);
+    tx = -Math.sin(theta); tz = Math.sin(theta);
   }
 
   return { position: new THREE.Vector3(x, 0, z), tangent: new THREE.Vector3(tx, 0, tz), s, lapCircumference };
@@ -74,13 +74,13 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
     scene.fog = new THREE.Fog(0x87ceeb, 200, 5000);
 
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 8000);
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(window.devicePixelRatio);
     mountRef.current.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.4);
+    scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
     sun.position.set(300, 1000, 300);
     scene.add(sun);
 
@@ -140,7 +140,7 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
       };
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: textures.side[1], transparent: true }));
       sprite.scale.set(13, 13, 1);
-      sprite.position.y = 7.2; // 발이 트랙 속으로 묻히지 않도록 상향 조정
+      sprite.position.y = 7.2; // 발 위치 상향 조정 (지면 묻힘 방지)
       group.add(sprite);
       scene.add(group);
       runnerGroups.set(runner.id, { group, sprite, textures });
@@ -161,7 +161,7 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
         const lastToRest = sorted.find(r => !r.isResting) || sorted[sorted.length - 1];
         const cameraTargetRunner = (leader.isResting ? lastToRest : leader) || leader;
 
-        // 카메라 모드 결정 (사용자 요청: 코너 막 돌았을 때인 90% 지점 적용)
+        // 카메라 모드 결정 (코너 탈출 시점인 90% 지점 적용)
         const isFinishCameraActive = cameraTargetRunner.progress >= 0.90 && !cameraTargetRunner.isResting;
 
         runnersRef.current.forEach(runner => {
@@ -173,31 +173,26 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
             
             if (runner.isResting) {
               sprite.material.map = textures.resting[0];
-              sprite.position.y = 5.6; // 서 있을 때 발 위치 최적화
+              sprite.position.y = 5.6; // 서 있을 때의 발 위치
             } else {
-              // 사용자 요청: 서기 전까지는 달리는 모습을 유지
               const frameIdx = Math.floor((now * 0.03 + runner.bobOffset * 10) % (textures.side.length - 1)) + 1;
               
               if (runner.progress < 0.03) {
-                // 출발 직후: 옆모습
                 sprite.material.map = textures.side[frameIdx];
               } 
               else if (runner.progress >= 0.90) {
-                // 사용자 요청: 코너를 막 돌았을 때(90%)부터 즉시 옆모습으로 전환
+                // 사용자의 요청: 코너를 막 돌았을 때(90%)부터 즉시 옆모습으로 전환
                 sprite.material.map = textures.side[frameIdx];
               }
               else if (isFinishCameraActive && runner.progress >= 0.80) {
-                // 카메라가 결승선을 향해 다가오는 짧은 구간: 앞모습
                 sprite.material.map = textures.front[frameIdx];
               }
               else {
-                // 일반 구간: 뒷모습 추격
                 sprite.material.map = textures.back[frameIdx];
               }
               
-              sprite.position.y = 7.2; // 달리는 중 발 높이 유지
+              sprite.position.y = 7.2; // 달리는 도중 발 위치
             }
-            sprite.scale.set(13, 13, 1);
           }
         });
 
@@ -211,7 +206,6 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
             targetPos.set(lm.position.x - 50, 30, lm.position.z + 100);
             targetLookAt.set(lm.position.x + 30, 15, lm.position.z - 10);
           } else if (isFinishCameraActive) {
-            // 결승선 고정 뷰
             targetPos.set(40, 25, finishLinePos + 80); 
             targetLookAt.set(0, 10, finishLinePos);
           } else {
@@ -241,6 +235,7 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
     animate();
 
     const handleResize = () => {
+      if (!camera || !renderer) return;
       camera.aspect = window.innerWidth / window.innerHeight; 
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -249,7 +244,10 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
     return () => {
       cancelAnimationFrame(frameId); 
       window.removeEventListener('resize', handleResize);
-      if (mountRef.current) mountRef.current.removeChild(renderer.domElement);
+      if (mountRef.current && renderer.domElement) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
+      renderer.dispose();
     };
   }, [runners.length]);
 
