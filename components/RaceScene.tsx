@@ -209,7 +209,13 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
           group.position.lerp(pathInfo.position, 0.25);
           
           // Face the tangent (convert tangent to Y-rotation) and flip 180 degrees
-          const targetRotation = Math.atan2(pathInfo.tangent.x, pathInfo.tangent.z) + Math.PI;
+          let targetRotation = Math.atan2(pathInfo.tangent.x, pathInfo.tangent.z) + Math.PI;
+          
+          // If the runner has finished and is resting, make them turn around naturally
+          if (runner.isResting) {
+            targetRotation += Math.PI;
+          }
+
           const currentRotation = group.rotation.y;
           let rotDiff = targetRotation - currentRotation;
           while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
