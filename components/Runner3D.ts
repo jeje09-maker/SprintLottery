@@ -137,9 +137,9 @@ export const createRunner3D = (shirtColorHex: string, id: number): Runner3DModel
       rightLeg.root.rotation.x = -legPhase * 1.2;
       rightLeg.root.rotation.z = 0;
       
-      // Knees bend positively (backwards)
-      leftLeg.lower.rotation.x = Math.max(0, legPhaseCos * 1.8 + 0.5);
-      rightLeg.lower.rotation.x = Math.max(0, -legPhaseCos * 1.8 + 0.5);
+      // Knees bend negatively (backwards) to look like actual human running
+      leftLeg.lower.rotation.x = -Math.max(0, legPhaseCos * 1.8 + 0.2);
+      rightLeg.lower.rotation.x = -Math.max(0, -legPhaseCos * 1.8 + 0.2);
 
       // Shoulders (opposite to legs)
       leftArm.root.rotation.x = -legPhase * 1.2;
@@ -147,9 +147,9 @@ export const createRunner3D = (shirtColorHex: string, id: number): Runner3DModel
       rightArm.root.rotation.x = legPhase * 1.2;
       rightArm.root.rotation.z = -0.2;
       
-      // Elbows (bend forwards)
-      leftArm.lower.rotation.x = -1.2 + (legPhase > 0 ? -0.8 * legPhase : 0);
-      rightArm.lower.rotation.x = -1.2 + (legPhase < 0 ? 0.8 * legPhase : 0);
+      // Elbows (bend forwards, positive X)
+      leftArm.lower.rotation.x = 1.0 + (leftArm.root.rotation.x > 0 ? leftArm.root.rotation.x * 0.5 : 0);
+      rightArm.lower.rotation.x = 1.0 + (rightArm.root.rotation.x > 0 ? rightArm.root.rotation.x * 0.5 : 0);
       
       // Torso bobbing and leaning
       const bob = Math.abs(Math.sin(cycle * 2)) * 0.8;
