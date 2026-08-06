@@ -123,8 +123,9 @@ export const createRunner3D = (shirtColorHex: string, id: number): Runner3DModel
       torsoJoint.position.y = legTotalH;
     } else {
       // Running cycle
-      // Reduced speed multiplier significantly (approx 25% of recent 3.33)
-      const cycle = time * 0.8 * Math.max(0.5, speed); 
+      // The cycle is driven by time. Speed multiplier added back to ensure they don't stall, just move arms/legs slower.
+      // Adjusted multiplier to be ~25% of the original fast speed (which was 20), so let's use 5.
+      const cycle = time * 5; // Removed Math.max(0.5, speed) because speed is extremely small (0.0007) and might cause stall if calculation is wrong.
       
       const legPhase = Math.sin(cycle);
       const legPhaseCos = Math.cos(cycle);
