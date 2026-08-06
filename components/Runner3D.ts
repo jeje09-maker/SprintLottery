@@ -123,8 +123,8 @@ export const createRunner3D = (shirtColorHex: string, id: number): Runner3DModel
       torsoJoint.position.y = legTotalH;
     } else {
       // Running cycle
-      // Reduced speed multiplier for more relaxed, slower limb movement
-      const cycle = time * 10 * Math.max(0.5, speed); 
+      // Reduced speed multiplier for more relaxed, slower limb movement (1/3 of previous 10)
+      const cycle = time * 3.33 * Math.max(0.5, speed); 
       
       const legPhase = Math.sin(cycle);
       const legPhaseCos = Math.cos(cycle);
