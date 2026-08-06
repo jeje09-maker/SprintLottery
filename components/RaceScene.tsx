@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { Runner, RaceStatus } from '../types';
-import { createRunnerFrames } from './RunnerSprite';
+import { createRunner3D, Runner3DModel } from './Runner3D';
 
 interface RaceSceneProps {
   runners: Runner[];
@@ -61,8 +61,7 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
     renderer: THREE.WebGLRenderer;
     runnerGroups: Map<number, {
       group: THREE.Group;
-      sprite: THREE.Sprite;
-      textures: { side: THREE.Texture[], back: THREE.Texture[], front: THREE.Texture[], resting: THREE.Texture[] };
+      runner3D: Runner3DModel;
     }>;
   } | null>(null);
 
@@ -133,22 +132,15 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
     scene.add(finishLine);
 
     const runnerGroups = new Map<number, any>();
-    const textureLoader = new THREE.TextureLoader();
     runnersRef.current.forEach((runner) => {
-      const group = new THREE.Group();
-      const rawSets = createRunnerFrames(runner.color, runner.id);
-      const textures = {
-        side: rawSets.side.map(f => textureLoader.load(f)),
-        back: rawSets.back.map(f => textureLoader.load(f)),
-        front: rawSets.front.map(f => textureLoader.load(f)),
-        resting: rawSets.resting.map(f => textureLoader.load(f))
-      };
-      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: textures.side[1], transparent: true }));
-      sprite.scale.set(13, 13, 1);
-      sprite.position.y = 7.2; // 발 위치 상향 조정 (달리기 중)
-      group.add(sprite);
-      scene.add(group);
-      runnerGroups.set(runner.id, { group, sprite, textures });
+      const runner3D = createRunner3D(runner.color, runner.id);
+      runner3D.group.scale.set(0.6, 0.6, 0.6); // Scale to fit track
+
+      const containerGroup = new THREE.Group();
+      containerGroup.add(runner3D.group);
+      
+      scene.add(containerGroup);
+      runnerGroups.set(runner.id, { group: containerGroup, runner3D });
     });
 
     sceneRef.current = { scene, camera, renderer, runnerGroups };
@@ -171,35 +163,36 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
         // 카메라 모드 결정 (코너 탈출 직후인 90% 지점 적용)
         const isFinishCameraActive = cameraTargetRunner.progress >= 0.90 && !cameraTargetRunner.isResting;
 
+        const time = now / 1000;
         runnersRef.current.forEach(runner => {
           const rData = runnerGroups.get(runner.id);
           if (rData) {
-            const { group, sprite, textures } = rData;
+            const { group, runner3D } = rData;
+            
+            const prevPos = group.position.clone();
             const pathInfo = getPathData(runner.progress, runner.lane, runner.laneOffset);
             group.position.lerp(pathInfo.position, 0.25);
             
-            if (runner.isResting) {
-              sprite.material.map = textures.resting[0];
-              sprite.position.y = 5.8; // 정지 시 지면 밀착도 개선
-            } else {
-              const frameIdx = Math.floor((now * 0.03 + runner.bobOffset * 10) % (textures.side.length - 1)) + 1;
-              
-              if (runner.progress < 0.03) {
-                sprite.material.map = textures.side[frameIdx];
-              } 
-              else if (runner.progress >= 0.90) {
-                // 사용자의 요청: 90% 지점부터 즉시 옆모습 전환
-                sprite.material.map = textures.side[frameIdx];
-              }
-              else if (isFinishCameraActive && runner.progress >= 0.80) {
-                sprite.material.map = textures.front[frameIdx];
-              }
-              else {
-                sprite.material.map = textures.back[frameIdx];
-              }
-              
-              sprite.position.y = 7.2; // 달리는 중 발 높이 상향 보정 유지
-            }
+            // Face the tangent (convert tangent to Y-rotation)
+            const targetRotation = Math.atan2(pathInfo.tangent.x, pathInfo.tangent.z);
+            const currentRotation = group.rotation.y;
+            let rotDiff = targetRotation - currentRotation;
+            while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
+            while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
+            group.rotation.y += rotDiff * 0.2;
+
+            // Calculate speed for animation multiplier
+            const dist = group.position.distanceTo(prevPos);
+            const speed = dist * 2.0; 
+            
+            // Curve leaning (track turns left)
+            const isCurve = Math.abs(pathInfo.tangent.x) < 0.99 && Math.abs(pathInfo.tangent.z) < 0.99;
+            const curveLeanTarget = isCurve ? 0.3 * Math.min(1, speed * 2) : 0;
+            
+            if (group.userData.curveLean === undefined) group.userData.curveLean = 0;
+            group.userData.curveLean += (curveLeanTarget - group.userData.curveLean) * 0.1;
+            
+            runner3D.updateAnimation(time, speed, runner.isResting, group.userData.curveLean);
           }
         });
 
