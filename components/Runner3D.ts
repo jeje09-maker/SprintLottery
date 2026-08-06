@@ -108,6 +108,8 @@ export const createRunner3D = (shirtColorHex: string, id: number): Runner3DModel
   rightLeg.root.position.set(-torsoW/2 + upperLimbW/2 + 0.1, 0, 0);
   torsoJoint.add(rightLeg.root);
 
+  // Add random variation to each runner's animation speed (between 0.85x and 1.15x)
+  const animVariation = 0.85 + Math.random() * 0.3;
   // Lift the whole character up by leg height so feet touch ground
   const legTotalH = upperLimbH + lowerLimbH; // approx 6.4
   torsoJoint.position.y = legTotalH;
@@ -123,9 +125,8 @@ export const createRunner3D = (shirtColorHex: string, id: number): Runner3DModel
       torsoJoint.position.y = legTotalH;
     } else {
       // Running cycle
-      // The cycle is driven by time. Speed multiplier added back to ensure they don't stall, just move arms/legs slower.
-      // Increased by 50% from 5 to 7.5 as requested by user.
-      const cycle = time * 7.5; 
+      // Increased by 100% from 7.5 to 15, multiplied by per-runner variation so they run out of sync
+      const cycle = time * 15.0 * animVariation; 
       
       const legPhase = Math.sin(cycle);
       const legPhaseCos = Math.cos(cycle);
