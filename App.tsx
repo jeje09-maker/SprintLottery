@@ -37,7 +37,7 @@ const App: React.FC = () => {
 
   const initRace = () => {
     const newRunners: Runner[] = Array.from({ length: participantCount }, (_, i) => {
-      const baseSpeed = 0.0007 + (Math.random() * 0.00035); // 속도 편차를 약간 늘려 드라마틱하게
+      const baseSpeed = 0.00015 + (Math.random() * 0.0001); // 느린 속도 밸런싱
 
       return {
         id: i + 1,
@@ -104,7 +104,7 @@ const App: React.FC = () => {
           return prev.map((runner) => {
             if (runner.isResting) return runner;
 
-            let currentSpeed = runner.baseSpeed + (Math.sin(now * 0.0012 + runner.id) * 0.00005);
+            let currentSpeed = runner.baseSpeed + (Math.sin(now * 0.0012 + runner.id) * 0.00001);
             let nextLane = runner.lane;
             let nextLaneOffset = runner.laneOffset;
 
