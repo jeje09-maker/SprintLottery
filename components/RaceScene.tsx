@@ -173,8 +173,8 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
             const pathInfo = getPathData(runner.progress, runner.lane, runner.laneOffset);
             group.position.lerp(pathInfo.position, 0.25);
             
-            // Face the tangent (convert tangent to Y-rotation)
-            const targetRotation = Math.atan2(pathInfo.tangent.x, pathInfo.tangent.z);
+            // Face the tangent (convert tangent to Y-rotation) and flip 180 degrees
+            const targetRotation = Math.atan2(pathInfo.tangent.x, pathInfo.tangent.z) + Math.PI;
             const currentRotation = group.rotation.y;
             let rotDiff = targetRotation - currentRotation;
             while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
