@@ -43,19 +43,20 @@ export const createRunner3D = (shirtColorHex: string, id: number): Runner3DModel
   }
   const numTex = new THREE.CanvasTexture(canvas);
   numTex.colorSpace = THREE.SRGBColorSpace;
-  const numMat = new THREE.MeshStandardMaterial({ map: numTex, roughness: 0.9 });
+  // Use DoubleSide and transparent just in case
+  const numMat = new THREE.MeshStandardMaterial({ map: numTex, roughness: 0.9, transparent: true, alphaTest: 0.1 });
   const torsoFront = new THREE.Mesh(new THREE.PlaneGeometry(torsoW*0.8, torsoW*0.8), numMat);
-  torsoFront.position.set(0, torsoH/2, torsoD/2 + 0.05);
+  torsoFront.position.set(0, torsoH/2, torsoD/2 + 0.1);
   const torsoBack = new THREE.Mesh(new THREE.PlaneGeometry(torsoW*0.8, torsoW*0.8), numMat);
   torsoBack.rotation.y = Math.PI;
-  torsoBack.position.set(0, torsoH/2, -torsoD/2 - 0.05);
+  torsoBack.position.set(0, torsoH/2, -torsoD/2 - 0.1);
   torsoJoint.add(torsoFront, torsoBack);
 
   // Head
   const headJoint = new THREE.Group();
   headJoint.position.set(0, torsoH + headS/2 - 0.2, 0);
   torsoJoint.add(headJoint);
-  const headMesh = new THREE.Mesh(new THREE.BoxGeometry(headS, headS, headS), skin);
+  const headMesh = new THREE.Mesh(new THREE.SphereGeometry(headS/2, 16, 16), skin);
   headMesh.castShadow = true;
   headJoint.add(headMesh);
   const hairMesh = new THREE.Mesh(new THREE.BoxGeometry(headS*1.05, headS*0.3, headS*1.05), hair);
@@ -122,8 +123,8 @@ export const createRunner3D = (shirtColorHex: string, id: number): Runner3DModel
       torsoJoint.position.y = legTotalH;
     } else {
       // Running cycle
-      // Speed multiplier for animation speed based on physical speed
-      const cycle = time * 20 * Math.max(0.5, speed); 
+      // Reduced speed multiplier for more relaxed, slower limb movement
+      const cycle = time * 10 * Math.max(0.5, speed); 
       
       const legPhase = Math.sin(cycle);
       const legPhaseCos = Math.cos(cycle);

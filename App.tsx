@@ -17,6 +17,18 @@ const App: React.FC = () => {
   const [commentary, setCommentary] = useState<string>("그랜드 스타디움에 오신 것을 환영합니다!");
   const finishOrderRef = useRef<number[]>([]);
   const raceStartTimeRef = useRef<number>(0);
+
+  const updateCommentary = (text: string) => {
+    setCommentary(text);
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ko-KR';
+      utterance.rate = 1.3;
+      utterance.pitch = 1.1;
+      window.speechSynthesis.speak(utterance);
+    }
+  };
   
   const runnersRef = useRef<Runner[]>([]);
   useEffect(() => {
@@ -44,7 +56,7 @@ const App: React.FC = () => {
     });
     setRunners(newRunners);
     setStatus(RaceStatus.IDLE);
-    setCommentary("선수들 출발선에 정렬했습니다. 무작위 대진표가 확정되었습니다!");
+    updateCommentary("선수들 출발선에 정렬했습니다. 무작위 대진표가 확정되었습니다!");
     finishOrderRef.current = [];
   };
 
@@ -68,7 +80,7 @@ const App: React.FC = () => {
     })));
     finishOrderRef.current = [];
     setStatus(RaceStatus.RACING);
-    setCommentary("출발! 영광을 향한 질주가 시작되었습니다!");
+    updateCommentary("출발! 영광을 향한 질주가 시작되었습니다!");
   };
 
   useEffect(() => {
@@ -158,7 +170,7 @@ const App: React.FC = () => {
       commentaryInterval = window.setInterval(async () => {
         if (runnersRef.current.length > 0) {
           const text = await getRaceCommentary(runnersRef.current, RaceStatus.RACING);
-          setCommentary(text);
+          updateCommentary(text);
         }
       }, 10000);
     }
