@@ -217,7 +217,7 @@ const App: React.FC = () => {
             clearInterval(interval);
             clearInterval(commentaryInterval);
             triggerConfetti();
-            updateCommentary("6\uBA85\uC758 \uC6B0\uC2B9\uC790\uAC00 \uBAA8\uB450 \uB3C4\uCC29\uD588\uC2B5\uB2C8\uB2E4! \uB098\uBA38\uC9C0 39\uBA85\uC758 \uC120\uC218\uB294 \uB2EC\uB9AC\uB358 \uC790\uB9AC\uC5D0\uC11C \uC7A5\uB82C\uD788 \uC4F0\uB7EC\uC84C\uC2B5\uB2C8\uB2E4!");
+            updateCommentary((isLottoMode || participantCount === 45) ? `${targetWinners}명의 우승자가 모두 도착했습니다! 나머지 ${participantCount - targetWinners}명의 선수는 달리던 자리에서 장렬히 쓰러졌습니다!` : `경기가 종료되었습니다! 모든 선수가 완주했습니다!`);
             return finishedState;
           }
 
@@ -429,7 +429,7 @@ const App: React.FC = () => {
                 {(isLottoMode || participantCount === 45) && (
                   <div className="p-3 bg-red-950/40 border border-red-500/30 rounded-2xl text-center">
                     <p className="text-xs font-bold text-red-400">
-                      {'\uD83D\uDC80 \uB098\uBA38\uC9C0 39\uBA85\uC758 \uC120\uC218\uB294 \uB2EC\uB9AC\uB358 \uC790\uB9AC\uC5D0\uC11C \uC4F0\uB7EC\uC84C\uC2B5\uB2C8\uB2E4.'}
+                      {`💀 나머지 ${participantCount - allResults.slice(0, (isLottoMode || participantCount === 45) ? 6 : allResults.length).length}명의 선수는 달리던 자리에서 쓰러졌습니다.`}
                     </p>
                   </div>
                 )}
