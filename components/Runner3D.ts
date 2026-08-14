@@ -21,7 +21,7 @@ export const createRunner3D = (shirtColorHex: string, id: number, name?: string)
   const upperLimbW = 1.0, upperLimbH = 3.2, upperLimbD = 1.0;
   const lowerLimbW = 0.9, lowerLimbH = 3.2, lowerLimbD = 0.9;
   
-  // Torso Joint (for bobbing and leaning)
+  // Torso Joint
   const torsoJoint = new THREE.Group();
   group.add(torsoJoint);
 
@@ -31,7 +31,7 @@ export const createRunner3D = (shirtColorHex: string, id: number, name?: string)
   torsoMesh.receiveShadow = true;
   torsoJoint.add(torsoMesh);
 
-  // Number / Name label
+  // Jersey Number Badge
   const canvas = document.createElement('canvas');
   canvas.width = 128; canvas.height = 128;
   const ctx = canvas.getContext('2d');
@@ -51,6 +51,34 @@ export const createRunner3D = (shirtColorHex: string, id: number, name?: string)
   torsoBack.rotation.y = Math.PI;
   torsoBack.position.set(0, torsoH/2, -torsoD/2 - 0.1);
   torsoJoint.add(torsoFront, torsoBack);
+
+  // Floating 3D Name Tag Sprite above head
+  const nameCanvas = document.createElement('canvas');
+  nameCanvas.width = 256;
+  nameCanvas.height = 64;
+  const nameCtx = nameCanvas.getContext('2d');
+  if (nameCtx) {
+    nameCtx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+    nameCtx.roundRect(4, 4, 248, 56, 16);
+    nameCtx.fill();
+    nameCtx.strokeStyle = shirtColorHex;
+    nameCtx.lineWidth = 4;
+    nameCtx.roundRect(4, 4, 248, 56, 16);
+    nameCtx.stroke();
+    nameCtx.fillStyle = '#ffffff';
+    nameCtx.font = 'bold 26px sans-serif';
+    nameCtx.textAlign = 'center';
+    nameCtx.textBaseline = 'middle';
+    const displayName = name ? `${id}. ${name}` : `${id}¹ø`;
+    nameCtx.fillText(displayName.length > 9 ? displayName.slice(0, 8) + '¡¦' : displayName, 128, 32);
+  }
+  const nameTexture = new THREE.CanvasTexture(nameCanvas);
+  nameTexture.colorSpace = THREE.SRGBColorSpace;
+  const nameSpriteMat = new THREE.SpriteMaterial({ map: nameTexture, depthTest: false });
+  const nameSprite = new THREE.Sprite(nameSpriteMat);
+  nameSprite.scale.set(6.5, 1.6, 1);
+  nameSprite.position.set(0, 11, 0);
+  group.add(nameSprite);
 
   // Head
   const headJoint = new THREE.Group();
@@ -109,28 +137,30 @@ export const createRunner3D = (shirtColorHex: string, id: number, name?: string)
   torsoJoint.add(rightLeg.root);
 
   const animVariation = 0.85 + Math.random() * 0.3;
-  const legTotalH = upperLimbH + lowerLimbH; // approx 6.4
+  const legTotalH = upperLimbH + lowerLimbH;
   torsoJoint.position.y = legTotalH;
 
   const updateAnimation = (time: number, speed: number, isResting: boolean, curveLean: number, isFallen?: boolean) => {
-    // Fallen pose (knocked out on the track)
     if (isFallen) {
+      // Fallen on the track animation
       torsoJoint.position.y = 1.0;
-      torsoJoint.rotation.set(Math.PI / 2.1, 0, 0.4);
-      headJoint.rotation.set(-0.2, 0.5, 0);
-      leftArm.root.rotation.set(0.6, 0, -1.2);
-      rightArm.root.rotation.set(0.6, 0, 1.2);
+      torsoJoint.rotation.set(Math.PI / 2.05, 0, 0.35);
+      headJoint.rotation.set(-0.2, 0.4, 0);
+      leftArm.root.rotation.set(0.6, 0, -1.1);
+      rightArm.root.rotation.set(0.6, 0, 1.1);
       leftArm.lower.rotation.set(0.2, 0, 0);
       rightArm.lower.rotation.set(0.2, 0, 0);
-      leftLeg.root.rotation.set(-0.2, 0, -0.4);
-      rightLeg.root.rotation.set(-0.2, 0, 0.4);
+      leftLeg.root.rotation.set(-0.2, 0, -0.3);
+      rightLeg.root.rotation.set(-0.2, 0, 0.3);
       leftLeg.lower.rotation.set(0.2, 0, 0);
       rightLeg.lower.rotation.set(0.2, 0, 0);
+      nameSprite.position.set(0, 3.5, 0); // Drop nameplate lower
       return;
     }
 
+    nameSprite.position.set(0, 11, 0);
+
     if (isResting) {
-      // Idle pose
       leftArm.root.rotation.set(0, 0, 0.1); rightArm.root.rotation.set(0, 0, -0.1);
       leftArm.lower.rotation.set(-0.1, 0, 0); rightArm.lower.rotation.set(-0.1, 0, 0);
       leftLeg.root.rotation.set(0, 0, 0.1); rightLeg.root.rotation.set(0, 0, -0.1);
@@ -138,7 +168,6 @@ export const createRunner3D = (shirtColorHex: string, id: number, name?: string)
       torsoJoint.rotation.set(0, 0, 0);
       torsoJoint.position.y = legTotalH;
     } else {
-      // Running cycle
       const cycle = time * 15.0 * animVariation; 
       const legPhase = Math.sin(cycle);
       const legPhaseCos = Math.cos(cycle);

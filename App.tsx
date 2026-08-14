@@ -23,6 +23,30 @@ const SAMPLE_NAMES = [
   '엔진풀가동', '지구력마스터', '황금다리', '돌격대장', '초음속러너', '터보스프린트'
 ];
 
+const triggerConfetti = () => {
+  if (typeof window !== 'undefined' && (window as any).confetti) {
+    (window as any).confetti({
+      particleCount: 120,
+      spread: 80,
+      origin: { y: 0.6 }
+    });
+    setTimeout(() => {
+      (window as any).confetti({
+        particleCount: 80,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 }
+      });
+      (window as any).confetti({
+        particleCount: 80,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 }
+      });
+    }, 400);
+  }
+};
+
 const App: React.FC = () => {
   const [participantCount, setParticipantCount] = useState<number>(45);
   const [isLottoMode, setIsLottoMode] = useState<boolean>(true);
@@ -44,8 +68,8 @@ const App: React.FC = () => {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'ko-KR';
-      utterance.rate = 1.3;
-      utterance.pitch = 1.1;
+      utterance.rate = 1.25;
+      utterance.pitch = 1.05;
       window.speechSynthesis.speak(utterance);
     }
   };
@@ -86,7 +110,7 @@ const App: React.FC = () => {
     setStatus(RaceStatus.IDLE);
     updateCommentary(
       isLottoMode || participantCount === 45
-        ? "45인의 로또 스프린트 레이스가 준비되었습니다. 상위 6명만 완주합니다!"
+        ? "45인의 로또 스프린트 레이스가 준비되었습니다. 6명만 완주합니다!"
         : "선수들이 출발선에 정렬했습니다."
     );
     finishOrderRef.current = [];
@@ -163,7 +187,7 @@ const App: React.FC = () => {
     })));
     finishOrderRef.current = [];
     setStatus(RaceStatus.RACING);
-    updateCommentary("출발! 6개의 당첨 번호를 향한 질주가 시작되었습니다!");
+    updateCommentary("출발! 6개의 당첨 번호를 향한 전력 질주가 시작되었습니다!");
   };
 
   useEffect(() => {
@@ -186,7 +210,8 @@ const App: React.FC = () => {
             setStatus(RaceStatus.FINISHED);
             clearInterval(interval);
             clearInterval(commentaryInterval);
-            updateCommentary("상위 6명이 골인했습니다! 나머지 39명의 선수는 달리던 자리에서 모두 쓰러졌습니다!");
+            triggerConfetti();
+            updateCommentary("6명의 우승자가 모두 도착했습니다! 나머지 39명의 선수는 달리던 자리에서 장렬히 쓰러졌습니다!");
             return finishedState;
           }
 
@@ -195,6 +220,7 @@ const App: React.FC = () => {
             setStatus(RaceStatus.FINISHED);
             clearInterval(interval);
             clearInterval(commentaryInterval);
+            triggerConfetti();
             return prev;
           }
 
@@ -311,15 +337,15 @@ const App: React.FC = () => {
 
           {/* Top Controls */}
           <div className="pointer-events-auto flex items-center gap-3">
-             <div className="bg-black/90 backdrop-blur-xl p-3.5 rounded-[2rem] border border-white/10 flex items-center gap-4 shadow-2xl">
+             <div className="bg-black/90 backdrop-blur-xl p-3 rounded-[2rem] border border-white/10 flex items-center gap-3.5 shadow-2xl">
                 
-                {/* Mode Select Buttons */}
+                {/* Lotto 45 Mode Button */}
                 <button
                   onClick={handleSelectLotto}
                   disabled={status === RaceStatus.RACING}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                  className={`px-3.5 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-md ${
                     isLottoMode || participantCount === 45
-                      ? 'bg-yellow-400 text-slate-950 shadow-[0_0_15px_rgba(250,204,21,0.5)]'
+                      ? 'bg-yellow-400 text-slate-950 ring-2 ring-yellow-300'
                       : 'bg-white/10 text-yellow-400 hover:bg-white/20'
                   }`}
                 >
@@ -327,24 +353,25 @@ const App: React.FC = () => {
                   <span>로또 (45인)</span>
                 </button>
 
-                {/* Participant Count */}
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">선수</span>
+                {/* Participant Count Selector */}
+                <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">인원</span>
                   <input 
                     type="number"
                     min="2" max="60"
                     value={participantCount}
                     disabled={status === RaceStatus.RACING}
                     onChange={(e) => handleLaneChange(parseInt(e.target.value) || 2)}
-                    className="bg-white/5 border border-white/20 rounded-xl px-2.5 py-1.5 text-white w-16 text-center text-lg font-black focus:outline-none focus:border-yellow-400 transition-colors"
+                    className="bg-transparent text-white w-12 text-center text-base font-black focus:outline-none focus:text-yellow-400 transition-colors"
                   />
+                  <span className="text-[10px] text-slate-400 font-bold">명</span>
                 </div>
 
                 {/* "이름쓰기" Button (Direct & Prominent!) */}
                 <button
                   onClick={handleOpenNameModal}
                   disabled={status === RaceStatus.RACING}
-                  className="px-3.5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-cyan-500/30 active:scale-95 transition-all flex items-center gap-1.5 border border-cyan-300/40"
+                  className="px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-cyan-500/30 active:scale-95 transition-all flex items-center gap-1.5 border border-cyan-300/40"
                 >
                   <span>??</span>
                   <span>이름쓰기 ({participantCount}명)</span>
@@ -368,21 +395,21 @@ const App: React.FC = () => {
 
         {/* Bottom Commentary & Finished Screen */}
         <div className="flex flex-col md:flex-row gap-4 items-end justify-between">
-          <div className="pointer-events-auto w-full md:w-[540px] bg-yellow-400 text-slate-950 p-4 rounded-2xl shadow-2xl flex items-center gap-3.5">
+          <div className="pointer-events-auto w-full md:w-[540px] bg-yellow-400 text-slate-950 p-4 rounded-2xl shadow-2xl flex items-center gap-3.5 border border-yellow-300">
             <div className="bg-slate-950 text-white px-2.5 py-1 rounded-lg font-black text-[10px] italic tracking-tighter uppercase shrink-0">중계석</div>
             <p className="text-base font-black italic uppercase tracking-tight flex-1 truncate">{commentary}</p>
           </div>
 
           {/* Finished Results Podium */}
           {status === RaceStatus.FINISHED && (
-            <div className="pointer-events-auto w-full max-w-lg bg-black/95 backdrop-blur-2xl p-6 md:p-7 rounded-[2.5rem] border border-yellow-400/40 shadow-[0_0_80px_rgba(250,204,21,0.25)] flex flex-col max-h-[75vh] animate-in slide-in-from-bottom duration-500">
+            <div className="pointer-events-auto w-full max-w-lg bg-black/95 backdrop-blur-2xl p-6 md:p-7 rounded-[2.5rem] border border-yellow-400/50 shadow-[0_0_80px_rgba(250,204,21,0.3)] flex flex-col max-h-[75vh] animate-in slide-in-from-bottom duration-500">
               
               <div className="text-center mb-4 pb-3 border-b border-white/10">
                 <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">
                   {isLottoMode || participantCount === 45 ? '?? 로또 6/45 당첨 번호' : '?? 최종 완주 결과'}
                 </h2>
                 <p className="text-yellow-400 text-xs font-bold uppercase tracking-widest mt-1">
-                  {isLottoMode || participantCount === 45 ? '완주 성공 6인 ? 행운의 번호' : '공식 경기 기록'}
+                  {isLottoMode || participantCount === 45 ? '완주 성공 6인 ? 행운의 당첨 번호' : '공식 경기 기록'}
                 </p>
               </div>
 
@@ -393,7 +420,7 @@ const App: React.FC = () => {
                     <span className="text-[11px] font-black text-yellow-400 uppercase tracking-wider">당첨 번호 6개 (오름차순)</span>
                     <button 
                       onClick={handleCopyNumbers}
-                      className="text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold px-2 py-1 rounded-md transition-all"
+                      className="text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold px-2.5 py-1 rounded-md transition-all border border-slate-700"
                     >
                       {copied ? '? 복사 완료' : '?? 번호 복사'}
                     </button>
@@ -405,7 +432,7 @@ const App: React.FC = () => {
                         <div 
                           key={i} 
                           style={{ backgroundColor: lotto.bg }}
-                          className="w-10 h-10 rounded-full flex items-center justify-center font-black text-white text-base shadow-lg shadow-black/50 border-2 border-white/40 animate-in zoom-in"
+                          className="w-10 h-10 rounded-full flex items-center justify-center font-black text-white text-base shadow-lg shadow-black/60 border-2 border-white/50 animate-in zoom-in"
                         >
                           {num}
                         </div>
