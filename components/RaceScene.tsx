@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { Runner, RaceStatus } from '../types';
@@ -68,7 +67,6 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
   useEffect(() => {
     if (!mountRef.current) return;
 
-    // Clean up to prevent ghosting or multiple renderers
     while (mountRef.current.firstChild) {
       mountRef.current.removeChild(mountRef.current.firstChild);
     }
@@ -133,8 +131,8 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
 
     const runnerGroups = new Map<number, any>();
     runnersRef.current.forEach((runner) => {
-      const runner3D = createRunner3D(runner.color, runner.id);
-      runner3D.group.scale.set(0.6, 0.6, 0.6); // Scale to fit track
+      const runner3D = createRunner3D(runner.color, runner.id, runner.name);
+      runner3D.group.scale.set(0.6, 0.6, 0.6);
 
       const containerGroup = new THREE.Group();
       containerGroup.add(runner3D.group);
@@ -153,39 +151,40 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
       const now = Date.now();
 
       if (statusRef.current === RaceStatus.RACING || statusRef.current === RaceStatus.FINISHED) {
-        const sorted = [...runnersRef.current].sort((a, b) => b.progress - a.progress);
-        const leader = sorted[0];
+        const sorted = [...runnersRef.current].filter(r => !r.isFallen).sort((a, b) => b.progress - a.progress);
+        const leader = sorted[0] || runnersRef.current[0];
         if (leader) {
-          const lastToRest = sorted.find(r => !r.isResting) || sorted[sorted.length - 1];
+          const lastToRest = sorted.find(r => !r.isResting) || sorted[sorted.length - 1] || leader;
           const cameraTargetRunner = (leader.isResting ? lastToRest : leader) || leader;
 
-          // 카메라 모드 결정 (코너 탈출 직후인 90% 지점 적용)
           const isFinishCameraActive = cameraTargetRunner.progress >= 0.90 && !cameraTargetRunner.isResting;
 
-          const lm = runnerGroups.get(cameraTargetRunner.id)!.group;
-          const targetPos = new THREE.Vector3();
-          const targetLookAt = new THREE.Vector3();
-          
-          if (cameraTargetRunner.progress < 0.03) {
-            targetPos.set(lm.position.x - 50, 30, lm.position.z + 100);
-            targetLookAt.set(lm.position.x + 30, 15, lm.position.z - 10);
-          } else if (isFinishCameraActive) {
-            // 결승선 고정 뷰
-            targetPos.set(40, 25, finishLinePos + 80); 
-            targetLookAt.set(0, 10, finishLinePos);
-          } else {
-            const pInfo = getPathData(cameraTargetRunner.progress, cameraTargetRunner.lane, cameraTargetRunner.laneOffset);
-            const camDist = 70; 
-            const camHeight = 40; 
-            const tangent = new THREE.Vector3().copy(pInfo.tangent);
-            targetPos.copy(lm.position).sub(tangent.multiplyScalar(camDist)).add(new THREE.Vector3(0, camHeight, 0));
-            targetLookAt.copy(lm.position).add(new THREE.Vector3(0, 15, 0));
-          }
+          const runnerEntry = runnerGroups.get(cameraTargetRunner.id);
+          if (runnerEntry) {
+            const lm = runnerEntry.group;
+            const targetPos = new THREE.Vector3();
+            const targetLookAt = new THREE.Vector3();
+            
+            if (cameraTargetRunner.progress < 0.03) {
+              targetPos.set(lm.position.x - 50, 30, lm.position.z + 100);
+              targetLookAt.set(lm.position.x + 30, 15, lm.position.z - 10);
+            } else if (isFinishCameraActive) {
+              targetPos.set(40, 25, finishLinePos + 80); 
+              targetLookAt.set(0, 10, finishLinePos);
+            } else {
+              const pInfo = getPathData(cameraTargetRunner.progress, cameraTargetRunner.lane, cameraTargetRunner.laneOffset);
+              const camDist = 70; 
+              const camHeight = 40; 
+              const tangent = new THREE.Vector3().copy(pInfo.tangent);
+              targetPos.copy(lm.position).sub(tangent.multiplyScalar(camDist)).add(new THREE.Vector3(0, camHeight, 0));
+              targetLookAt.copy(lm.position).add(new THREE.Vector3(0, 15, 0));
+            }
 
-          camPosRef.current.lerp(targetPos, 0.04);
-          lookAtRef.current.lerp(targetLookAt, 0.06);
-          camera.position.copy(camPosRef.current);
-          camera.lookAt(lookAtRef.current);
+            camPosRef.current.lerp(targetPos, 0.04);
+            lookAtRef.current.lerp(targetLookAt, 0.06);
+            camera.position.copy(camPosRef.current);
+            camera.lookAt(lookAtRef.current);
+          }
         }
       } else {
         const startZ = CURVE_RADIUS + trackWidth / 2;
@@ -197,7 +196,6 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
         camera.lookAt(lookAtRef.current);
       }
 
-      // ALWAYS update runners so they are positioned and rotated correctly even when IDLE
       const time = now / 1000;
       runnersRef.current.forEach(runner => {
         const rData = runnerGroups.get(runner.id);
@@ -208,10 +206,8 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
           const pathInfo = getPathData(runner.progress, runner.lane, runner.laneOffset);
           group.position.lerp(pathInfo.position, 0.25);
           
-          // Face the tangent (convert tangent to Y-rotation) and flip 180 degrees
           let targetRotation = Math.atan2(pathInfo.tangent.x, pathInfo.tangent.z) + Math.PI;
           
-          // If the runner has finished and is resting, make them turn around naturally
           if (runner.isResting) {
             targetRotation += Math.PI;
           }
@@ -220,20 +216,24 @@ const RaceScene: React.FC<RaceSceneProps> = ({ runners, status }) => {
           let rotDiff = targetRotation - currentRotation;
           while (rotDiff > Math.PI) rotDiff -= Math.PI * 2;
           while (rotDiff < -Math.PI) rotDiff += Math.PI * 2;
-          group.rotation.y += rotDiff * (statusRef.current === RaceStatus.IDLE ? 1.0 : 0.2); // instant turn if idle
+          group.rotation.y += rotDiff * (statusRef.current === RaceStatus.IDLE ? 1.0 : 0.2);
 
-          // Calculate speed for animation multiplier
           const dist = group.position.distanceTo(prevPos);
-          const speed = statusRef.current === RaceStatus.IDLE ? 0 : dist * 2.0; 
+          const speed = (statusRef.current === RaceStatus.IDLE || runner.isFallen) ? 0 : dist * 2.0; 
           
-          // Curve leaning (track turns left)
           const isCurve = Math.abs(pathInfo.tangent.x) < 0.99 && Math.abs(pathInfo.tangent.z) < 0.99;
           const curveLeanTarget = isCurve ? 0.3 * Math.min(1, speed * 2) : 0;
           
           if (group.userData.curveLean === undefined) group.userData.curveLean = 0;
           group.userData.curveLean += (curveLeanTarget - group.userData.curveLean) * 0.1;
           
-          runner3D.updateAnimation(time, speed, runner.isResting || statusRef.current === RaceStatus.IDLE, group.userData.curveLean);
+          runner3D.updateAnimation(
+            time, 
+            speed, 
+            runner.isResting || statusRef.current === RaceStatus.IDLE, 
+            group.userData.curveLean,
+            runner.isFallen
+          );
         }
       });
       renderer.render(scene, camera);

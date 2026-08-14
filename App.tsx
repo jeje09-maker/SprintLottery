@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Runner, RaceStatus } from './types';
 import RaceScene from './components/RaceScene';
@@ -10,11 +9,32 @@ const COLORS = [
   '#c0c0c0', '#ffd700', '#cd7f32', '#00ff7f', '#00bfff'
 ];
 
+export const getLottoColor = (num: number) => {
+  if (num <= 10) return { bg: '#f59e0b', border: '#d97706', text: '#ffffff' }; // 1~10 ³ë¶û
+  if (num <= 20) return { bg: '#2563eb', border: '#1d4ed8', text: '#ffffff' }; // 11~20 ÆÄ¶û
+  if (num <= 30) return { bg: '#dc2626', border: '#b91c1c', text: '#ffffff' }; // 21~30 »¡°­
+  if (num <= 40) return { bg: '#4b5563', border: '#374151', text: '#ffffff' }; // 31~40 È¸»ö
+  return { bg: '#16a34a', border: '#15803d', text: '#ffffff' }; // 41~45 ÃÊ·Ï
+};
+
+const SAMPLE_NAMES = [
+  'ºÒ²ÉÁúÁÖ', 'ÃÑ¾ËÅº»ç³ªÀÌ', '¹Ù¶÷ÀÇ¾Æµé', 'ÁúÁÖº»´É', 'ÆøÇ³·¯³Ê', '¿ì»çÀÎº¼Æ®',
+  '¹ø°³¹ß', '½ºÇÇµåÅ·', '´Ş·Á¶óÇÏ´Ï', 'Ä¡Å¸¸Ç', '³¯½Úµ¹ÀÌ', 'ÅÂÇ³½ºÇÁ¸°ÅÍ',
+  '¿£ÁøÇ®°¡µ¿', 'Áö±¸·Â¸¶½ºÅÍ', 'È²±İ´Ù¸®', 'µ¹°İ´ëÀå', 'ÃÊÀ½¼Ó·¯³Ê', 'ÅÍº¸½ºÇÁ¸°Æ®'
+];
+
 const App: React.FC = () => {
-  const [participantCount, setParticipantCount] = useState<number>(40);
+  const [participantCount, setParticipantCount] = useState<number>(45);
+  const [isLottoMode, setIsLottoMode] = useState<boolean>(true);
+  const [runnerNames, setRunnerNames] = useState<string[]>(Array.from({ length: 45 }, (_, i) => `${i + 1}¹ø`));
   const [runners, setRunners] = useState<Runner[]>([]);
   const [status, setStatus] = useState<RaceStatus>(RaceStatus.IDLE);
-  const [commentary, setCommentary] = useState<string>("ê·¸ëœë“œ ìŠ¤íƒ€ë””ì›€ì— ì˜¤ì‹  ê²ƒì„ í™˜ì˜í•©ë‹ˆë‹¤!");
+  const [commentary, setCommentary] = useState<string>("±×·£µå ½ºÅ¸µğ¿ò¿¡ ¿À½Å °ÍÀ» È¯¿µÇÕ´Ï´Ù!");
+  const [showNameModal, setShowNameModal] = useState<boolean>(false);
+  const [modalTab, setModalTab] = useState<'individual' | 'batch'>('individual');
+  const [batchText, setBatchText] = useState<string>('');
+  const [copied, setCopied] = useState<boolean>(false);
+
   const finishOrderRef = useRef<number[]>([]);
   const raceStartTimeRef = useRef<number>(0);
 
@@ -37,11 +57,18 @@ const App: React.FC = () => {
 
   const initRace = () => {
     const newRunners: Runner[] = Array.from({ length: participantCount }, (_, i) => {
-      const baseSpeed = 0.0007 + (Math.random() * 0.00035); // ì›ë˜ ì§„í–‰ ì†ë„ë¡œ ë³µêµ¬
+      const baseSpeed = 0.00065 + (Math.random() * 0.00035);
+      const name = runnerNames[i] || `${i + 1}¹ø`;
+
+      let color = COLORS[i % COLORS.length];
+      if (isLottoMode || participantCount === 45) {
+        color = getLottoColor(i + 1).bg;
+      }
 
       return {
         id: i + 1,
-        color: COLORS[i % COLORS.length],
+        name: name,
+        color: color,
         progress: 0,
         lane: i % 10,
         laneOffset: (Math.random() - 0.5) * 0.8,
@@ -49,6 +76,7 @@ const App: React.FC = () => {
         baseSpeed: baseSpeed,
         finished: false,
         isResting: false,
+        isFallen: false,
         stopProgress: 1.01 + (Math.random() * 0.05),
         bobOffset: Math.random() * Math.PI * 2,
         boosterEndTime: 0
@@ -56,13 +84,67 @@ const App: React.FC = () => {
     });
     setRunners(newRunners);
     setStatus(RaceStatus.IDLE);
-    updateCommentary("ì„ ìˆ˜ë“¤ ì¶œë°œì„ ì— ì •ë ¬í–ˆìŠµë‹ˆë‹¤. ë¬´ì‘ìœ„ ëŒ€ì§„í‘œê°€ í™•ì •ë˜ì—ˆìŠµë‹ˆë‹¤!");
+    updateCommentary(
+      isLottoMode || participantCount === 45
+        ? "45ÀÎÀÇ ·Î¶Ç ½ºÇÁ¸°Æ® ·¹ÀÌ½º°¡ ÁØºñµÇ¾ú½À´Ï´Ù. »óÀ§ 6¸í¸¸ ¿ÏÁÖÇÕ´Ï´Ù!"
+        : "¼±¼öµéÀÌ Ãâ¹ß¼±¿¡ Á¤·ÄÇß½À´Ï´Ù."
+    );
     finishOrderRef.current = [];
   };
 
   useEffect(() => {
     initRace();
-  }, [participantCount]);
+  }, [participantCount, isLottoMode, runnerNames]);
+
+  const handleLaneChange = (count: number) => {
+    const clamped = Math.max(2, Math.min(60, count));
+    setParticipantCount(clamped);
+    if (clamped !== 45) {
+      setIsLottoMode(false);
+    }
+    setRunnerNames(prev => {
+      const next = [...prev];
+      if (clamped > prev.length) {
+        return [...next, ...Array(clamped - prev.length).fill('').map((_, i) => `${prev.length + i + 1}¹ø`)];
+      }
+      return next.slice(0, clamped);
+    });
+  };
+
+  const handleSelectLotto = () => {
+    setIsLottoMode(true);
+    setParticipantCount(45);
+    setRunnerNames(Array.from({ length: 45 }, (_, i) => `${i + 1}¹ø`));
+  };
+
+  const handleOpenNameModal = () => {
+    setBatchText(runnerNames.slice(0, participantCount).map((n, i) => n || `${i + 1}¹ø`).join(', '));
+    setShowNameModal(true);
+  };
+
+  const handleApplyBatchText = () => {
+    const rawNames = batchText
+      .split(/[\n,;]+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    
+    if (rawNames.length > 0) {
+      const newNames = Array(participantCount).fill('').map((_, i) => rawNames[i] || `${i + 1}¹ø`);
+      setRunnerNames(newNames);
+    }
+    setShowNameModal(false);
+  };
+
+  const handleAutoFillNumbers = () => {
+    const names = Array(participantCount).fill('').map((_, i) => `${i + 1}¹ø`);
+    setRunnerNames(names);
+  };
+
+  const handleRandomizeNames = () => {
+    const shuffled = [...SAMPLE_NAMES].sort(() => 0.5 - Math.random());
+    const names = Array(participantCount).fill('').map((_, i) => shuffled[i % shuffled.length] + ` ${i + 1}`);
+    setRunnerNames(names);
+  };
 
   const startRace = () => {
     if (status === RaceStatus.RACING) return;
@@ -73,6 +155,7 @@ const App: React.FC = () => {
       progress: 0, 
       finished: false, 
       isResting: false,
+      isFallen: false,
       rank: undefined, 
       finishTime: undefined,
       speed: r.baseSpeed,
@@ -80,7 +163,7 @@ const App: React.FC = () => {
     })));
     finishOrderRef.current = [];
     setStatus(RaceStatus.RACING);
-    updateCommentary("ì¶œë°œ! ì˜ê´‘ì„ í–¥í•œ ì§ˆì£¼ê°€ ì‹œì‘ë˜ì—ˆìŠµë‹ˆë‹¤!");
+    updateCommentary("Ãâ¹ß! 6°³ÀÇ ´çÃ· ¹øÈ£¸¦ ÇâÇÑ ÁúÁÖ°¡ ½ÃÀÛµÇ¾ú½À´Ï´Ù!");
   };
 
   useEffect(() => {
@@ -93,7 +176,21 @@ const App: React.FC = () => {
         const elapsed = now - raceStartTimeRef.current;
 
         setRunners(prev => {
-          const allResting = prev.every(r => r.isResting);
+          const targetWinners = (isLottoMode || participantCount === 45) ? 6 : participantCount;
+
+          if (finishOrderRef.current.length >= targetWinners) {
+            const finishedState = prev.map(r => {
+              const isWinner = finishOrderRef.current.includes(r.id);
+              return isWinner ? { ...r, speed: 0, isResting: true } : { ...r, speed: 0, isFallen: true };
+            });
+            setStatus(RaceStatus.FINISHED);
+            clearInterval(interval);
+            clearInterval(commentaryInterval);
+            updateCommentary("»óÀ§ 6¸íÀÌ °ñÀÎÇß½À´Ï´Ù! ³ª¸ÓÁö 39¸íÀÇ ¼±¼ö´Â ´Ş¸®´ø ÀÚ¸®¿¡¼­ ¸ğµÎ ¾²·¯Á³½À´Ï´Ù!");
+            return finishedState;
+          }
+
+          const allResting = prev.every(r => r.isResting || r.isFallen);
           if (allResting) {
             setStatus(RaceStatus.FINISHED);
             clearInterval(interval);
@@ -102,14 +199,13 @@ const App: React.FC = () => {
           }
 
           return prev.map((runner) => {
-            if (runner.isResting) return runner;
+            if (runner.isResting || runner.isFallen) return runner;
 
             let currentSpeed = runner.baseSpeed + (Math.sin(now * 0.0012 + runner.id) * 0.00005);
             let nextLane = runner.lane;
             let nextLaneOffset = runner.laneOffset;
 
-            // ì¤‘ë°˜ ë ˆì´ìŠ¤ ì „ëµ (4ì´ˆ í›„)
-            if (elapsed > 4000 && !runner.finished) {
+            if (elapsed > 3500 && !runner.finished) {
               const isBoosterActive = runner.boosterEndTime && runner.boosterEndTime > now;
 
               if (isBoosterActive) {
@@ -123,8 +219,8 @@ const App: React.FC = () => {
                 const lineOrderOffset = ((runner.id * 7) % 100 / 100 - 0.5) * 0.2;
                 nextLaneOffset = nextLaneOffset * 0.94 + lineOrderOffset * 0.06;
 
-                if (Math.random() < 0.007) { // ë¶€ìŠ¤í„° í™•ë¥  ì†Œí­ ìƒìŠ¹
-                  runner.boosterEndTime = now + 5000;
+                if (Math.random() < 0.008) {
+                  runner.boosterEndTime = now + 4500;
                 }
               }
             } else if (runner.finished) {
@@ -166,7 +262,6 @@ const App: React.FC = () => {
         });
       }, 30);
 
-      // ì½”ë©˜í„°ë¦¬ ê°„ê²© 10ì´ˆ
       commentaryInterval = window.setInterval(async () => {
         if (runnersRef.current.length > 0) {
           const text = await getRaceCommentary(runnersRef.current, RaceStatus.RACING);
@@ -178,86 +273,332 @@ const App: React.FC = () => {
       clearInterval(interval);
       clearInterval(commentaryInterval);
     };
-  }, [status]);
+  }, [status, isLottoMode, participantCount]);
 
   const allResults = [...runners]
     .filter(r => r.rank !== undefined)
     .sort((a, b) => (a.rank || 0) - (b.rank || 0));
 
+  const sortedWinningNumbers = allResults.slice(0, 6).map(r => r.id).sort((a, b) => a - b);
+
+  const handleCopyNumbers = () => {
+    navigator.clipboard.writeText(sortedWinningNumbers.join(', '));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-[#050505] text-white select-none font-sans">
       <RaceScene runners={runners} status={status} />
 
-      <div className="absolute inset-0 pointer-events-none flex flex-col justify-between z-20">
-        <div className="p-6 flex justify-between items-start">
+      <div className="absolute inset-0 pointer-events-none flex flex-col justify-between z-20 p-4 md:p-6">
+        
+        {/* Top Bar */}
+        <div className="flex justify-between items-start">
           <div className="pointer-events-auto flex gap-3 drop-shadow-2xl">
-            <div className="bg-[#cc0000] px-6 py-3 rounded-l-2xl border-r-2 border-white/20 flex flex-col justify-center items-center">
-              <span className="text-white font-black italic text-3xl leading-none">LIVE</span>
+            <div className="bg-[#cc0000] px-5 py-2.5 rounded-l-2xl border-r-2 border-white/20 flex flex-col justify-center items-center">
+              <span className="text-white font-black italic text-2xl leading-none">LIVE</span>
             </div>
-            <div className="bg-black/90 backdrop-blur-xl px-8 py-3 rounded-r-2xl border border-white/10">
-              <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase leading-none">
-                3D <span className="text-yellow-400">FINISH CAM</span>
+            <div className="bg-black/90 backdrop-blur-xl px-6 py-2.5 rounded-r-2xl border border-white/10">
+              <h1 className="text-xl font-black italic tracking-tighter text-white uppercase leading-none">
+                3D <span className="text-yellow-400">LOTTO SPRINT</span>
               </h1>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em]">Stadium Simulator</span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">
+                {isLottoMode || participantCount === 45 ? '45ÀÎ ·¹ÀÌ½º ? 6ÀÎ »ıÁ¸ ÃßÃ·' : 'Æ®·¢ ·¹ÀÌ½º ½Ã¹Ä·¹ÀÌÅÍ'}
+              </span>
             </div>
           </div>
 
-          <div className="pointer-events-auto flex items-center gap-4">
-             <div className="bg-black/90 backdrop-blur-xl p-4 rounded-[2rem] border border-white/10 flex items-center gap-6 shadow-2xl">
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase mb-1 ml-1">Runners</span>
+          {/* Top Controls */}
+          <div className="pointer-events-auto flex items-center gap-3">
+             <div className="bg-black/90 backdrop-blur-xl p-3.5 rounded-[2rem] border border-white/10 flex items-center gap-4 shadow-2xl">
+                
+                {/* Mode Select Buttons */}
+                <button
+                  onClick={handleSelectLotto}
+                  disabled={status === RaceStatus.RACING}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 ${
+                    isLottoMode || participantCount === 45
+                      ? 'bg-yellow-400 text-slate-950 shadow-[0_0_15px_rgba(250,204,21,0.5)]'
+                      : 'bg-white/10 text-yellow-400 hover:bg-white/20'
+                  }`}
+                >
+                  <span>??</span>
+                  <span>·Î¶Ç (45ÀÎ)</span>
+                </button>
+
+                {/* Participant Count */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">¼±¼ö</span>
                   <input 
                     type="number"
-                    min="1" max="100"
+                    min="2" max="60"
                     value={participantCount}
                     disabled={status === RaceStatus.RACING}
-                    onChange={(e) => setParticipantCount(Math.min(100, Math.max(1, parseInt(e.target.value) || 1)))}
-                    className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white w-24 text-center text-xl font-black focus:outline-none focus:border-yellow-400 transition-colors"
+                    onChange={(e) => handleLaneChange(parseInt(e.target.value) || 2)}
+                    className="bg-white/5 border border-white/20 rounded-xl px-2.5 py-1.5 text-white w-16 text-center text-lg font-black focus:outline-none focus:border-yellow-400 transition-colors"
                   />
                 </div>
+
+                {/* "ÀÌ¸§¾²±â" Button (Direct & Prominent!) */}
+                <button
+                  onClick={handleOpenNameModal}
+                  disabled={status === RaceStatus.RACING}
+                  className="px-3.5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-cyan-500/30 active:scale-95 transition-all flex items-center gap-1.5 border border-cyan-300/40"
+                >
+                  <span>??</span>
+                  <span>ÀÌ¸§¾²±â ({participantCount}¸í)</span>
+                </button>
+
+                {/* Start Race */}
                 <button 
                   onClick={startRace}
                   disabled={status === RaceStatus.RACING}
-                  className={`px-10 py-4 rounded-xl font-black uppercase transition-all transform active:scale-95 ${
+                  className={`px-6 py-2.5 rounded-xl font-black uppercase text-sm transition-all transform active:scale-95 ${
                     status === RaceStatus.RACING
                       ? 'bg-slate-800 text-slate-600 opacity-50 cursor-not-allowed'
                       : 'bg-yellow-400 hover:bg-yellow-300 text-slate-950 shadow-[0_0_20px_rgba(250,204,21,0.4)]'
                   }`}
                 >
-                  START RACE
+                  ´Ş¸®±â ½ÃÀÛ! (GO)
                 </button>
              </div>
           </div>
         </div>
 
-        <div className="p-6 flex flex-col md:flex-row gap-6 items-end justify-between">
-          <div className="pointer-events-auto w-full md:w-[600px] bg-yellow-400 text-slate-950 p-5 rounded-2xl shadow-2xl flex items-center gap-4">
-            <div className="bg-slate-950 text-white px-3 py-1 rounded-lg font-black text-xs italic tracking-tighter uppercase shrink-0">Broadcast</div>
-            <p className="text-xl font-black italic uppercase tracking-tight flex-1 truncate">{commentary}</p>
+        {/* Bottom Commentary & Finished Screen */}
+        <div className="flex flex-col md:flex-row gap-4 items-end justify-between">
+          <div className="pointer-events-auto w-full md:w-[540px] bg-yellow-400 text-slate-950 p-4 rounded-2xl shadow-2xl flex items-center gap-3.5">
+            <div className="bg-slate-950 text-white px-2.5 py-1 rounded-lg font-black text-[10px] italic tracking-tighter uppercase shrink-0">Áß°è¼®</div>
+            <p className="text-base font-black italic uppercase tracking-tight flex-1 truncate">{commentary}</p>
           </div>
 
+          {/* Finished Results Podium */}
           {status === RaceStatus.FINISHED && (
-            <div className="pointer-events-auto w-full max-w-xl bg-black/95 backdrop-blur-2xl p-8 rounded-[3rem] border border-white/10 shadow-[0_0_100px_rgba(0,0,0,1)] flex flex-col max-h-[75vh]">
-              <div className="text-center mb-6">
-                <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">FINAL <span className="text-yellow-400">WINNERS</span></h2>
-                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">Multi-angle Replay Complete</p>
+            <div className="pointer-events-auto w-full max-w-lg bg-black/95 backdrop-blur-2xl p-6 md:p-7 rounded-[2.5rem] border border-yellow-400/40 shadow-[0_0_80px_rgba(250,204,21,0.25)] flex flex-col max-h-[75vh] animate-in slide-in-from-bottom duration-500">
+              
+              <div className="text-center mb-4 pb-3 border-b border-white/10">
+                <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">
+                  {isLottoMode || participantCount === 45 ? '?? ·Î¶Ç 6/45 ´çÃ· ¹øÈ£' : '?? ÃÖÁ¾ ¿ÏÁÖ °á°ú'}
+                </h2>
+                <p className="text-yellow-400 text-xs font-bold uppercase tracking-widest mt-1">
+                  {isLottoMode || participantCount === 45 ? '¿ÏÁÖ ¼º°ø 6ÀÎ ? Çà¿îÀÇ ¹øÈ£' : '°ø½Ä °æ±â ±â·Ï'}
+                </p>
               </div>
-              <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
-                {allResults.map((runner, i) => (
-                  <div key={runner.id} className={`flex items-center justify-between p-5 rounded-2xl border-2 transition-all ${i === 0 ? 'bg-yellow-400 text-slate-950 border-white scale-105 shadow-lg' : 'bg-white/5 border-white/5'}`}>
-                    <div className="flex items-center gap-4">
-                      <span className="text-2xl font-black italic">#{i + 1}</span>
-                      <span className="text-xl font-black uppercase italic">ATHLETE {runner.id}</span>
-                    </div>
-                    <div className="w-10 h-10 rounded-lg shadow-inner border border-black/10" style={{ backgroundColor: runner.color }} />
+
+              {/* Sorted Numbers Bar for Lotto */}
+              {(isLottoMode || participantCount === 45) && (
+                <div className="mb-4 bg-white/5 p-3.5 rounded-2xl border border-yellow-400/30">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[11px] font-black text-yellow-400 uppercase tracking-wider">´çÃ· ¹øÈ£ 6°³ (¿À¸§Â÷¼ø)</span>
+                    <button 
+                      onClick={handleCopyNumbers}
+                      className="text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold px-2 py-1 rounded-md transition-all"
+                    >
+                      {copied ? '? º¹»ç ¿Ï·á' : '?? ¹øÈ£ º¹»ç'}
+                    </button>
                   </div>
-                ))}
+                  <div className="flex justify-center gap-2">
+                    {sortedWinningNumbers.map((num, i) => {
+                      const lotto = getLottoColor(num);
+                      return (
+                        <div 
+                          key={i} 
+                          style={{ backgroundColor: lotto.bg }}
+                          className="w-10 h-10 rounded-full flex items-center justify-center font-black text-white text-base shadow-lg shadow-black/50 border-2 border-white/40 animate-in zoom-in"
+                        >
+                          {num}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Leaderboard List */}
+              <div className="flex-1 overflow-y-auto pr-1.5 custom-scrollbar space-y-2.5 max-h-[240px]">
+                {allResults.slice(0, (isLottoMode || participantCount === 45) ? 6 : allResults.length).map((runner, i) => {
+                  const lotto = getLottoColor(runner.id);
+                  return (
+                    <div 
+                      key={runner.id} 
+                      className={`flex items-center justify-between p-3.5 rounded-2xl border-2 transition-all ${
+                        i === 0 
+                          ? 'bg-yellow-400 text-slate-950 border-white scale-[1.02] shadow-lg' 
+                          : 'bg-white/5 border-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3.5">
+                        <div 
+                          style={{ backgroundColor: lotto.bg }}
+                          className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-md border border-white/30 shrink-0"
+                        >
+                          {runner.id}
+                        </div>
+                        <div>
+                          <span className="font-black uppercase italic text-sm">{runner.name || `${runner.id}¹ø ¼±¼ö`}</span>
+                          <p className={`text-[10px] font-bold ${i === 0 ? 'text-slate-800' : 'text-slate-400'}`}>
+                            {i + 1}À§ °ñÀÎ
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`text-xs font-black px-2.5 py-1 rounded-lg ${i === 0 ? 'bg-slate-950 text-yellow-400' : 'bg-white/10 text-white'}`}>
+                        {i === 0 ? '?? 1µî' : i === 1 ? '?? 2µî' : i === 2 ? '?? 3µî' : `${i + 1}µî`}
+                      </span>
+                    </div>
+                  );
+                })}
+
+                {(isLottoMode || participantCount === 45) && (
+                  <div className="p-3 bg-red-950/40 border border-red-500/30 rounded-2xl text-center">
+                    <p className="text-xs font-bold text-red-400">
+                      ?? ³ª¸ÓÁö 39¸íÀÇ ¼±¼ö´Â ´Ş¸®´ø ÀÚ¸®¿¡¼­ ¾²·¯Á³½À´Ï´Ù.
+                    </p>
+                  </div>
+                )}
               </div>
-              <button onClick={initRace} className="mt-6 w-full py-5 bg-white text-black font-black rounded-2xl hover:bg-yellow-400 transition-all uppercase text-xl shadow-xl">Reset Stadium</button>
+
+              <button 
+                onClick={initRace} 
+                className="mt-4 w-full py-4 bg-yellow-400 text-slate-950 font-black rounded-2xl hover:bg-yellow-300 transition-all uppercase text-base shadow-xl active:scale-95"
+              >
+                »õ °æ±â ÁØºñÇÏ±â (Next)
+              </button>
             </div>
           )}
         </div>
       </div>
+
+      {/* ================= MODAL: ¼±¼ö ÀÌ¸§¾²±â / ¸í´Ü ÀÔ·Â ================= */}
+      {showNameModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md pointer-events-auto animate-in fade-in duration-200">
+          <div className="bg-slate-900 border border-yellow-400/40 w-full max-w-lg rounded-[2.5rem] shadow-2xl p-6 md:p-7 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="flex justify-between items-start mb-4 pb-3 border-b border-slate-800">
+              <div>
+                <h3 className="text-white font-black text-xl flex items-center gap-2">
+                  <span>??</span>
+                  <span>¼±¼ö ÀÌ¸§ ¾²±â (ÃÑ {participantCount}¸í)</span>
+                </h3>
+                <p className="text-slate-400 text-xs font-medium mt-1">
+                  Âü°¡ ¼±¼öµéÀÇ ÀÌ¸§À» Á÷Á¢ ÀÔ·ÂÇÏ°Å³ª ¸í´ÜÀ» ÇÑ ¹ø¿¡ ºÙ¿©³ÖÀ¸¼¼¿ä.
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowNameModal(false)}
+                className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm"
+              >
+                ?
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-2 mb-4 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
+              <button
+                onClick={() => setModalTab('individual')}
+                className={`flex-1 py-2 rounded-xl text-xs font-black transition-all ${
+                  modalTab === 'individual' 
+                    ? 'bg-yellow-400 text-slate-950 shadow-md' 
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Á÷Á¢ ÇÏ³ª¾¿ ÀÔ·Â
+              </button>
+              <button
+                onClick={() => setModalTab('batch')}
+                className={`flex-1 py-2 rounded-xl text-xs font-black transition-all ${
+                  modalTab === 'batch' 
+                    ? 'bg-yellow-400 text-slate-950 shadow-md' 
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                ÀÏ°ı ºÙ¿©³Ö±â (½°Ç¥/¿£ÅÍ)
+              </button>
+            </div>
+
+            {/* Tab 1: Individual Inputs */}
+            {modalTab === 'individual' && (
+              <div className="space-y-2.5 overflow-y-auto pr-1 flex-1 custom-scrollbar min-h-[220px]">
+                {runnerNames.slice(0, participantCount).map((name, idx) => (
+                  <div key={idx} className="flex items-center gap-2.5 bg-slate-950/80 p-2 rounded-2xl border border-slate-800">
+                    <div className="w-9 h-9 rounded-xl bg-yellow-500/20 text-yellow-300 font-black text-xs flex items-center justify-center border border-yellow-500/40 shrink-0">
+                      {idx + 1}
+                    </div>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => {
+                        const updated = [...runnerNames];
+                        updated[idx] = e.target.value;
+                        setRunnerNames(updated);
+                      }}
+                      placeholder={`${idx + 1}¹ø ¼±¼ö ÀÌ¸§ ÀÔ·Â...`}
+                      className="w-full bg-slate-900 border border-slate-700 focus:border-yellow-400 px-3.5 py-2 rounded-xl text-white text-xs font-bold outline-none transition-all placeholder:text-slate-500"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Tab 2: Batch Paste Textarea */}
+            {modalTab === 'batch' && (
+              <div className="flex-1 flex flex-col min-h-[220px]">
+                <p className="text-slate-400 text-xs mb-2">
+                  ½°Ç¥(,), ÁÙ¹Ù²Ş µîÀ¸·Î ±¸ºĞµÈ ÀÌ¸§À» ºÙ¿©³ÖÀ¸¼¼¿ä:
+                </p>
+                <textarea
+                  value={batchText}
+                  onChange={(e) => setBatchText(e.target.value)}
+                  placeholder="¿¹: È«±æµ¿, ÀÌ¼ø½Å, °­°¨Âù, À¯°ü¼ø, ±èÀ¯½Å, Àåº¸°í..."
+                  rows={7}
+                  className="w-full flex-1 bg-slate-950 border border-slate-700 focus:border-yellow-400 p-3.5 rounded-2xl text-white text-xs font-medium outline-none transition-all placeholder:text-slate-600 resize-none"
+                />
+                <button
+                  onClick={handleApplyBatchText}
+                  className="mt-3 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 text-xs font-black rounded-xl transition-all shadow-md"
+                >
+                  ¸í´Ü ÆÄ½ÌÇÏ¿© Àû¿ëÇÏ±â
+                </button>
+              </div>
+            )}
+
+            {/* Quick Actions Footer */}
+            <div className="mt-4 pt-3 border-t border-slate-800 flex flex-wrap justify-between items-center gap-2">
+              <div className="flex gap-2">
+                <button
+                  onClick={handleAutoFillNumbers}
+                  className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold rounded-lg transition-all"
+                >
+                  1~{participantCount}¹ø ¹øÈ£Ã¤¿ì±â
+                </button>
+                <button
+                  onClick={handleRandomizeNames}
+                  className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold rounded-lg transition-all"
+                >
+                  ?? ·£´ı ´Ğ³×ÀÓ
+                </button>
+              </div>
+
+              <button
+                onClick={() => setShowNameModal(false)}
+                className="px-5 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-yellow-400/20 active:scale-95 transition-all"
+              >
+                ÀúÀå ¹× ´İ±â
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* Custom Scrollbar CSS */}
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); border-radius: 12px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #eab308; border-radius: 12px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #ca8a04; }
+      `}</style>
     </div>
   );
 };

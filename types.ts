@@ -1,6 +1,6 @@
-
 export interface Runner {
   id: number;
+  name?: string;
   color: string;
   progress: number; // 0 to 1
   lane: number;
@@ -12,8 +12,9 @@ export interface Runner {
   rank?: number;
   bobOffset: number; 
   isResting?: boolean;
+  isFallen?: boolean; // ´Ş¸®´ø ÀÚ¸®¿¡¼­ ¾²·¯Áü
   stopProgress?: number;
-  boosterEndTime?: number; // ë¶€ìŠ¤í„°ê°€ ì¢…ë£Œë  íƒ€ì„ìŠ¤íƒ¬í”„
+  boosterEndTime?: number;
 }
 
 export enum RaceStatus {

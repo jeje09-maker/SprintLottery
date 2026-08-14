@@ -2,10 +2,10 @@ import * as THREE from 'three';
 
 export interface Runner3DModel {
   group: THREE.Group;
-  updateAnimation: (time: number, speed: number, isResting: boolean, curveLean: number) => void;
+  updateAnimation: (time: number, speed: number, isResting: boolean, curveLean: number, isFallen?: boolean) => void;
 }
 
-export const createRunner3D = (shirtColorHex: string, id: number): Runner3DModel => {
+export const createRunner3D = (shirtColorHex: string, id: number, name?: string): Runner3DModel => {
   const group = new THREE.Group();
   
   // Materials
@@ -31,20 +31,20 @@ export const createRunner3D = (shirtColorHex: string, id: number): Runner3DModel
   torsoMesh.receiveShadow = true;
   torsoJoint.add(torsoMesh);
 
-  // Number on back and front
+  // Number / Name label
   const canvas = document.createElement('canvas');
   canvas.width = 128; canvas.height = 128;
   const ctx = canvas.getContext('2d');
   if (ctx) {
     ctx.fillStyle = shirtColorHex; ctx.fillRect(0,0,128,128);
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 64px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 58px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText(id.toString(), 64, 64);
     ctx.strokeStyle = '#000'; ctx.lineWidth = 4; ctx.strokeText(id.toString(), 64, 64);
   }
   const numTex = new THREE.CanvasTexture(canvas);
   numTex.colorSpace = THREE.SRGBColorSpace;
-  // Use DoubleSide and transparent just in case
   const numMat = new THREE.MeshStandardMaterial({ map: numTex, roughness: 0.9, transparent: true, alphaTest: 0.1 });
+  
   const torsoFront = new THREE.Mesh(new THREE.PlaneGeometry(torsoW*0.8, torsoW*0.8), numMat);
   torsoFront.position.set(0, torsoH/2, torsoD/2 + 0.1);
   const torsoBack = new THREE.Mesh(new THREE.PlaneGeometry(torsoW*0.8, torsoW*0.8), numMat);
@@ -108,13 +108,27 @@ export const createRunner3D = (shirtColorHex: string, id: number): Runner3DModel
   rightLeg.root.position.set(-torsoW/2 + upperLimbW/2 + 0.1, 0, 0);
   torsoJoint.add(rightLeg.root);
 
-  // Add random variation to each runner's animation speed (between 0.85x and 1.15x)
   const animVariation = 0.85 + Math.random() * 0.3;
-  // Lift the whole character up by leg height so feet touch ground
   const legTotalH = upperLimbH + lowerLimbH; // approx 6.4
   torsoJoint.position.y = legTotalH;
 
-  const updateAnimation = (time: number, speed: number, isResting: boolean, curveLean: number) => {
+  const updateAnimation = (time: number, speed: number, isResting: boolean, curveLean: number, isFallen?: boolean) => {
+    // Fallen pose (knocked out on the track)
+    if (isFallen) {
+      torsoJoint.position.y = 1.0;
+      torsoJoint.rotation.set(Math.PI / 2.1, 0, 0.4);
+      headJoint.rotation.set(-0.2, 0.5, 0);
+      leftArm.root.rotation.set(0.6, 0, -1.2);
+      rightArm.root.rotation.set(0.6, 0, 1.2);
+      leftArm.lower.rotation.set(0.2, 0, 0);
+      rightArm.lower.rotation.set(0.2, 0, 0);
+      leftLeg.root.rotation.set(-0.2, 0, -0.4);
+      rightLeg.root.rotation.set(-0.2, 0, 0.4);
+      leftLeg.lower.rotation.set(0.2, 0, 0);
+      rightLeg.lower.rotation.set(0.2, 0, 0);
+      return;
+    }
+
     if (isResting) {
       // Idle pose
       leftArm.root.rotation.set(0, 0, 0.1); rightArm.root.rotation.set(0, 0, -0.1);
@@ -125,43 +139,33 @@ export const createRunner3D = (shirtColorHex: string, id: number): Runner3DModel
       torsoJoint.position.y = legTotalH;
     } else {
       // Running cycle
-      // Increased by 100% from 7.5 to 15, multiplied by per-runner variation so they run out of sync
       const cycle = time * 15.0 * animVariation; 
-      
       const legPhase = Math.sin(cycle);
       const legPhaseCos = Math.cos(cycle);
       
-      // Hips (running)
       leftLeg.root.rotation.x = legPhase * 1.2;
       leftLeg.root.rotation.z = 0;
       rightLeg.root.rotation.x = -legPhase * 1.2;
       rightLeg.root.rotation.z = 0;
       
-      // Knees bend negatively (backwards) to look like actual human running
       leftLeg.lower.rotation.x = -Math.max(0, legPhaseCos * 1.8 + 0.2);
       rightLeg.lower.rotation.x = -Math.max(0, -legPhaseCos * 1.8 + 0.2);
 
-      // Shoulders (opposite to legs)
       leftArm.root.rotation.x = -legPhase * 1.2;
       leftArm.root.rotation.z = 0.2;
       rightArm.root.rotation.x = legPhase * 1.2;
       rightArm.root.rotation.z = -0.2;
       
-      // Elbows (bend forwards, positive X)
       leftArm.lower.rotation.x = 1.0 + (leftArm.root.rotation.x > 0 ? leftArm.root.rotation.x * 0.5 : 0);
       rightArm.lower.rotation.x = 1.0 + (rightArm.root.rotation.x > 0 ? rightArm.root.rotation.x * 0.5 : 0);
       
-      // Torso bobbing and leaning
       const bob = Math.abs(Math.sin(cycle * 2)) * 0.8;
-      torsoJoint.position.y = legTotalH - bob + 0.5; // slight jump offset
+      torsoJoint.position.y = legTotalH - bob + 0.5;
       
-      // Forward lean
       const forwardLean = 0.25; 
-      // Curve lean (centripetal force)
       torsoJoint.rotation.x = forwardLean;
-      torsoJoint.rotation.z = curveLean * -0.5; // lean into the curve
+      torsoJoint.rotation.z = curveLean * -0.5;
       
-      // Slight head rotation to counter torso lean and look forward
       headJoint.rotation.x = -forwardLean;
       headJoint.rotation.z = -torsoJoint.rotation.z;
     }
