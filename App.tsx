@@ -10,17 +10,17 @@ const COLORS = [
 ];
 
 export const getLottoColor = (num: number) => {
-  if (num <= 10) return { bg: '#f59e0b', border: '#d97706', text: '#ffffff' }; // 1~10 ³ë¶û
-  if (num <= 20) return { bg: '#2563eb', border: '#1d4ed8', text: '#ffffff' }; // 11~20 ÆÄ¶û
-  if (num <= 30) return { bg: '#dc2626', border: '#b91c1c', text: '#ffffff' }; // 21~30 »¡°­
-  if (num <= 40) return { bg: '#4b5563', border: '#374151', text: '#ffffff' }; // 31~40 È¸»ö
-  return { bg: '#16a34a', border: '#15803d', text: '#ffffff' }; // 41~45 ÃÊ·Ï
+  if (num <= 10) return { bg: '#f59e0b', border: '#d97706', text: '#ffffff' };
+  if (num <= 20) return { bg: '#2563eb', border: '#1d4ed8', text: '#ffffff' };
+  if (num <= 30) return { bg: '#dc2626', border: '#b91c1c', text: '#ffffff' };
+  if (num <= 40) return { bg: '#4b5563', border: '#374151', text: '#ffffff' };
+  return { bg: '#16a34a', border: '#15803d', text: '#ffffff' };
 };
 
 const SAMPLE_NAMES = [
-  'ºÒ²ÉÁúÁÖ', 'ÃÑ¾ËÅº»ç³ªÀÌ', '¹Ù¶÷ÀÇ¾Æµé', 'ÁúÁÖº»´É', 'ÆøÇ³·¯³Ê', '¿ì»çÀÎº¼Æ®',
-  '¹ø°³¹ß', '½ºÇÇµåÅ·', '´Ş·Á¶óÇÏ´Ï', 'Ä¡Å¸¸Ç', '³¯½Úµ¹ÀÌ', 'ÅÂÇ³½ºÇÁ¸°ÅÍ',
-  '¿£ÁøÇ®°¡µ¿', 'Áö±¸·Â¸¶½ºÅÍ', 'È²±İ´Ù¸®', 'µ¹°İ´ëÀå', 'ÃÊÀ½¼Ó·¯³Ê', 'ÅÍº¸½ºÇÁ¸°Æ®'
+  'ë¶ˆê½ƒì§ˆì£¼', 'ì´ì•Œíƒ„ì‚¬ë‚˜ì´', 'ë°”ëŒì˜ì•„ë“¤', 'ì§ˆì£¼ë³¸ëŠ¥', 'í­í’ëŸ¬ë„ˆ', 'ìš°ì‚¬ì¸ë³¼íŠ¸',
+  'ë²ˆê°œë°œ', 'ìŠ¤í”¼ë“œí‚¹', 'ë‹¬ë ¤ë¼í•˜ë‹ˆ', 'ì¹˜íƒ€ë§¨', 'ë‚ ìŒ˜ëŒì´', 'íƒœí’ìŠ¤í”„ë¦°í„°',
+  'ì—”ì§„í’€ê°€ë™', 'ì§€êµ¬ë ¥ë§ˆìŠ¤í„°', 'í™©ê¸ˆë‹¤ë¦¬', 'ëŒê²©ëŒ€ì¥', 'ì´ˆìŒì†ëŸ¬ë„ˆ', 'í„°ë³´ìŠ¤í”„ë¦°íŠ¸'
 ];
 
 const triggerConfetti = () => {
@@ -50,10 +50,10 @@ const triggerConfetti = () => {
 const App: React.FC = () => {
   const [participantCount, setParticipantCount] = useState<number>(45);
   const [isLottoMode, setIsLottoMode] = useState<boolean>(true);
-  const [runnerNames, setRunnerNames] = useState<string[]>(Array.from({ length: 45 }, (_, i) => `${i + 1}¹ø`));
+  const [runnerNames, setRunnerNames] = useState<string[]>(Array.from({ length: 45 }, (_, i) => `${i + 1}ë²ˆ`));
   const [runners, setRunners] = useState<Runner[]>([]);
   const [status, setStatus] = useState<RaceStatus>(RaceStatus.IDLE);
-  const [commentary, setCommentary] = useState<string>("±×·£µå ½ºÅ¸µğ¿ò¿¡ ¿À½Å °ÍÀ» È¯¿µÇÕ´Ï´Ù!");
+  const [commentary, setCommentary] = useState<string>("ê·¸ëœë“œ ìŠ¤íƒ€ë””ì›€ì— ì˜¤ì‹  ê²ƒì„ í™˜ì˜í•©ë‹ˆë‹¤!");
   const [showNameModal, setShowNameModal] = useState<boolean>(false);
   const [modalTab, setModalTab] = useState<'individual' | 'batch'>('individual');
   const [batchText, setBatchText] = useState<string>('');
@@ -82,7 +82,7 @@ const App: React.FC = () => {
   const initRace = () => {
     const newRunners: Runner[] = Array.from({ length: participantCount }, (_, i) => {
       const baseSpeed = 0.00065 + (Math.random() * 0.00035);
-      const name = runnerNames[i] || `${i + 1}¹ø`;
+      const name = runnerNames[i] || `${i + 1}ë²ˆ`;
 
       let color = COLORS[i % COLORS.length];
       if (isLottoMode || participantCount === 45) {
@@ -110,8 +110,8 @@ const App: React.FC = () => {
     setStatus(RaceStatus.IDLE);
     updateCommentary(
       isLottoMode || participantCount === 45
-        ? "45ÀÎÀÇ ·Î¶Ç ½ºÇÁ¸°Æ® ·¹ÀÌ½º°¡ ÁØºñµÇ¾ú½À´Ï´Ù. 6¸í¸¸ ¿ÏÁÖÇÕ´Ï´Ù!"
-        : "¼±¼öµéÀÌ Ãâ¹ß¼±¿¡ Á¤·ÄÇß½À´Ï´Ù."
+        ? "45ì¸ì˜ ë¡œë˜ ìŠ¤í”„ë¦°íŠ¸ ë ˆì´ìŠ¤ê°€ ì¤€ë¹„ë˜ì—ˆìŠµë‹ˆë‹¤. 6ëª…ë§Œ ì™„ì£¼í•©ë‹ˆë‹¤!"
+        : "ì„ ìˆ˜ë“¤ì´ ì¶œë°œì„ ì— ì •ë ¬í–ˆìŠµë‹ˆë‹¤."
     );
     finishOrderRef.current = [];
   };
@@ -129,7 +129,7 @@ const App: React.FC = () => {
     setRunnerNames(prev => {
       const next = [...prev];
       if (clamped > prev.length) {
-        return [...next, ...Array(clamped - prev.length).fill('').map((_, i) => `${prev.length + i + 1}¹ø`)];
+        return [...next, ...Array(clamped - prev.length).fill('').map((_, i) => `${prev.length + i + 1}ë²ˆ`)];
       }
       return next.slice(0, clamped);
     });
@@ -138,11 +138,11 @@ const App: React.FC = () => {
   const handleSelectLotto = () => {
     setIsLottoMode(true);
     setParticipantCount(45);
-    setRunnerNames(Array.from({ length: 45 }, (_, i) => `${i + 1}¹ø`));
+    setRunnerNames(Array.from({ length: 45 }, (_, i) => `${i + 1}ë²ˆ`));
   };
 
   const handleOpenNameModal = () => {
-    setBatchText(runnerNames.slice(0, participantCount).map((n, i) => n || `${i + 1}¹ø`).join(', '));
+    setBatchText(runnerNames.slice(0, participantCount).map((n, i) => n || `${i + 1}ë²ˆ`).join(', '));
     setShowNameModal(true);
   };
 
@@ -153,14 +153,14 @@ const App: React.FC = () => {
       .filter(s => s.length > 0);
     
     if (rawNames.length > 0) {
-      const newNames = Array(participantCount).fill('').map((_, i) => rawNames[i] || `${i + 1}¹ø`);
+      const newNames = Array(participantCount).fill('').map((_, i) => rawNames[i] || `${i + 1}ë²ˆ`);
       setRunnerNames(newNames);
     }
     setShowNameModal(false);
   };
 
   const handleAutoFillNumbers = () => {
-    const names = Array(participantCount).fill('').map((_, i) => `${i + 1}¹ø`);
+    const names = Array(participantCount).fill('').map((_, i) => `${i + 1}ë²ˆ`);
     setRunnerNames(names);
   };
 
@@ -187,7 +187,7 @@ const App: React.FC = () => {
     })));
     finishOrderRef.current = [];
     setStatus(RaceStatus.RACING);
-    updateCommentary("Ãâ¹ß! 6°³ÀÇ ´çÃ· ¹øÈ£¸¦ ÇâÇÑ Àü·Â ÁúÁÖ°¡ ½ÃÀÛµÇ¾ú½À´Ï´Ù!");
+    updateCommentary("ì¶œë°œ! 6ê°œì˜ ë‹¹ì²¨ ë²ˆí˜¸ë¥¼ í–¥í•œ ì „ë ¥ ì§ˆì£¼ê°€ ì‹œì‘ë˜ì—ˆìŠµë‹ˆë‹¤!");
   };
 
   useEffect(() => {
@@ -211,7 +211,7 @@ const App: React.FC = () => {
             clearInterval(interval);
             clearInterval(commentaryInterval);
             triggerConfetti();
-            updateCommentary("6¸íÀÇ ¿ì½ÂÀÚ°¡ ¸ğµÎ µµÂøÇß½À´Ï´Ù! ³ª¸ÓÁö 39¸íÀÇ ¼±¼ö´Â ´Ş¸®´ø ÀÚ¸®¿¡¼­ Àå·ÄÈ÷ ¾²·¯Á³½À´Ï´Ù!");
+            updateCommentary("6ëª…ì˜ ìš°ìŠ¹ìê°€ ëª¨ë‘ ë„ì°©í–ˆìŠµë‹ˆë‹¤! ë‚˜ë¨¸ì§€ 39ëª…ì˜ ì„ ìˆ˜ëŠ” ë‹¬ë¦¬ë˜ ìë¦¬ì—ì„œ ì¥ë ¬íˆ ì“°ëŸ¬ì¡ŒìŠµë‹ˆë‹¤!");
             return finishedState;
           }
 
@@ -330,7 +330,7 @@ const App: React.FC = () => {
                 3D <span className="text-yellow-400">LOTTO SPRINT</span>
               </h1>
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.3em]">
-                {isLottoMode || participantCount === 45 ? '45ÀÎ ·¹ÀÌ½º ? 6ÀÎ »ıÁ¸ ÃßÃ·' : 'Æ®·¢ ·¹ÀÌ½º ½Ã¹Ä·¹ÀÌÅÍ'}
+                {isLottoMode || participantCount === 45 ? '45ì¸ ë ˆì´ìŠ¤ \u2022 6ì¸ ìƒì¡´ ì¶”ì²¨' : 'íŠ¸ë™ ë ˆì´ìŠ¤ ì‹œë®¬ë ˆì´í„°'}
               </span>
             </div>
           </div>
@@ -339,7 +339,6 @@ const App: React.FC = () => {
           <div className="pointer-events-auto flex items-center gap-3">
              <div className="bg-black/90 backdrop-blur-xl p-3 rounded-[2rem] border border-white/10 flex items-center gap-3.5 shadow-2xl">
                 
-                {/* Lotto 45 Mode Button */}
                 <button
                   onClick={handleSelectLotto}
                   disabled={status === RaceStatus.RACING}
@@ -349,13 +348,12 @@ const App: React.FC = () => {
                       : 'bg-white/10 text-yellow-400 hover:bg-white/20'
                   }`}
                 >
-                  <span>??</span>
-                  <span>·Î¶Ç (45ÀÎ)</span>
+                  <span>{'\uD83C\uDFB1'}</span>
+                  <span>ë¡œë˜ (45ì¸)</span>
                 </button>
 
-                {/* Participant Count Selector */}
                 <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-xl border border-white/10">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">ÀÎ¿ø</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">ì¸ì›</span>
                   <input 
                     type="number"
                     min="2" max="60"
@@ -364,20 +362,18 @@ const App: React.FC = () => {
                     onChange={(e) => handleLaneChange(parseInt(e.target.value) || 2)}
                     className="bg-transparent text-white w-12 text-center text-base font-black focus:outline-none focus:text-yellow-400 transition-colors"
                   />
-                  <span className="text-[10px] text-slate-400 font-bold">¸í</span>
+                  <span className="text-[10px] text-slate-400 font-bold">ëª…</span>
                 </div>
 
-                {/* "ÀÌ¸§¾²±â" Button (Direct & Prominent!) */}
                 <button
                   onClick={handleOpenNameModal}
                   disabled={status === RaceStatus.RACING}
                   className="px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-xs font-black rounded-xl shadow-lg shadow-cyan-500/30 active:scale-95 transition-all flex items-center gap-1.5 border border-cyan-300/40"
                 >
-                  <span>??</span>
-                  <span>ÀÌ¸§¾²±â ({participantCount}¸í)</span>
+                  <span>{'\u270D\uFE0F'}</span>
+                  <span>ì´ë¦„ì“°ê¸° ({participantCount}ëª…)</span>
                 </button>
 
-                {/* Start Race */}
                 <button 
                   onClick={startRace}
                   disabled={status === RaceStatus.RACING}
@@ -387,7 +383,7 @@ const App: React.FC = () => {
                       : 'bg-yellow-400 hover:bg-yellow-300 text-slate-950 shadow-[0_0_20px_rgba(250,204,21,0.4)]'
                   }`}
                 >
-                  ´Ş¸®±â ½ÃÀÛ! (GO)
+                  ë‹¬ë¦¬ê¸° ì‹œì‘! (GO)
                 </button>
              </div>
           </div>
@@ -396,33 +392,31 @@ const App: React.FC = () => {
         {/* Bottom Commentary & Finished Screen */}
         <div className="flex flex-col md:flex-row gap-4 items-end justify-between">
           <div className="pointer-events-auto w-full md:w-[540px] bg-yellow-400 text-slate-950 p-4 rounded-2xl shadow-2xl flex items-center gap-3.5 border border-yellow-300">
-            <div className="bg-slate-950 text-white px-2.5 py-1 rounded-lg font-black text-[10px] italic tracking-tighter uppercase shrink-0">Áß°è¼®</div>
+            <div className="bg-slate-950 text-white px-2.5 py-1 rounded-lg font-black text-[10px] italic tracking-tighter uppercase shrink-0">ì¤‘ê³„ì„</div>
             <p className="text-base font-black italic uppercase tracking-tight flex-1 truncate">{commentary}</p>
           </div>
 
-          {/* Finished Results Podium */}
           {status === RaceStatus.FINISHED && (
-            <div className="pointer-events-auto w-full max-w-lg bg-black/95 backdrop-blur-2xl p-6 md:p-7 rounded-[2.5rem] border border-yellow-400/50 shadow-[0_0_80px_rgba(250,204,21,0.3)] flex flex-col max-h-[75vh] animate-in slide-in-from-bottom duration-500">
+            <div className="pointer-events-auto w-full max-w-lg bg-black/95 backdrop-blur-2xl p-6 md:p-7 rounded-[2.5rem] border border-yellow-400/50 shadow-[0_0_80px_rgba(250,204,21,0.3)] flex flex-col max-h-[75vh]">
               
               <div className="text-center mb-4 pb-3 border-b border-white/10">
                 <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">
-                  {isLottoMode || participantCount === 45 ? '?? ·Î¶Ç 6/45 ´çÃ· ¹øÈ£' : '?? ÃÖÁ¾ ¿ÏÁÖ °á°ú'}
+                  {isLottoMode || participantCount === 45 ? '\uD83C\uDF89 ë¡œë˜ 6/45 ë‹¹ì²¨ ë²ˆí˜¸' : '\uD83C\uDFC6 ìµœì¢… ì™„ì£¼ ê²°ê³¼'}
                 </h2>
                 <p className="text-yellow-400 text-xs font-bold uppercase tracking-widest mt-1">
-                  {isLottoMode || participantCount === 45 ? '¿ÏÁÖ ¼º°ø 6ÀÎ ? Çà¿îÀÇ ´çÃ· ¹øÈ£' : '°ø½Ä °æ±â ±â·Ï'}
+                  {isLottoMode || participantCount === 45 ? 'ì™„ì£¼ ì„±ê³µ 6ì¸ \u2022 í–‰ìš´ì˜ ë‹¹ì²¨ ë²ˆí˜¸' : 'ê³µì‹ ê²½ê¸° ê¸°ë¡'}
                 </p>
               </div>
 
-              {/* Sorted Numbers Bar for Lotto */}
               {(isLottoMode || participantCount === 45) && (
                 <div className="mb-4 bg-white/5 p-3.5 rounded-2xl border border-yellow-400/30">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-[11px] font-black text-yellow-400 uppercase tracking-wider">´çÃ· ¹øÈ£ 6°³ (¿À¸§Â÷¼ø)</span>
+                    <span className="text-[11px] font-black text-yellow-400 uppercase tracking-wider">ë‹¹ì²¨ ë²ˆí˜¸ 6ê°œ (ì˜¤ë¦„ì°¨ìˆœ)</span>
                     <button 
                       onClick={handleCopyNumbers}
                       className="text-[10px] bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold px-2.5 py-1 rounded-md transition-all border border-slate-700"
                     >
-                      {copied ? '? º¹»ç ¿Ï·á' : '?? ¹øÈ£ º¹»ç'}
+                      {copied ? '\u2705 ë³µì‚¬ ì™„ë£Œ' : '\uD83D\uDCCB ë²ˆí˜¸ ë³µì‚¬'}
                     </button>
                   </div>
                   <div className="flex justify-center gap-2">
@@ -432,7 +426,7 @@ const App: React.FC = () => {
                         <div 
                           key={i} 
                           style={{ backgroundColor: lotto.bg }}
-                          className="w-10 h-10 rounded-full flex items-center justify-center font-black text-white text-base shadow-lg shadow-black/60 border-2 border-white/50 animate-in zoom-in"
+                          className="w-10 h-10 rounded-full flex items-center justify-center font-black text-white text-base shadow-lg shadow-black/60 border-2 border-white/50"
                         >
                           {num}
                         </div>
@@ -442,7 +436,6 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {/* Leaderboard List */}
               <div className="flex-1 overflow-y-auto pr-1.5 custom-scrollbar space-y-2.5 max-h-[240px]">
                 {allResults.slice(0, (isLottoMode || participantCount === 45) ? 6 : allResults.length).map((runner, i) => {
                   const lotto = getLottoColor(runner.id);
@@ -463,14 +456,14 @@ const App: React.FC = () => {
                           {runner.id}
                         </div>
                         <div>
-                          <span className="font-black uppercase italic text-sm">{runner.name || `${runner.id}¹ø ¼±¼ö`}</span>
+                          <span className="font-black uppercase italic text-sm">{runner.name || `${runner.id}ë²ˆ ì„ ìˆ˜`}</span>
                           <p className={`text-[10px] font-bold ${i === 0 ? 'text-slate-800' : 'text-slate-400'}`}>
-                            {i + 1}À§ °ñÀÎ
+                            {i + 1}ìœ„ ê³¨ì¸
                           </p>
                         </div>
                       </div>
                       <span className={`text-xs font-black px-2.5 py-1 rounded-lg ${i === 0 ? 'bg-slate-950 text-yellow-400' : 'bg-white/10 text-white'}`}>
-                        {i === 0 ? '?? 1µî' : i === 1 ? '?? 2µî' : i === 2 ? '?? 3µî' : `${i + 1}µî`}
+                        {i === 0 ? '\uD83E\uDD47 1ë“±' : i === 1 ? '\uD83E\uDD48 2ë“±' : i === 2 ? '\uD83E\uDD49 3ë“±' : `${i + 1}ë“±`}
                       </span>
                     </div>
                   );
@@ -479,7 +472,7 @@ const App: React.FC = () => {
                 {(isLottoMode || participantCount === 45) && (
                   <div className="p-3 bg-red-950/40 border border-red-500/30 rounded-2xl text-center">
                     <p className="text-xs font-bold text-red-400">
-                      ?? ³ª¸ÓÁö 39¸íÀÇ ¼±¼ö´Â ´Ş¸®´ø ÀÚ¸®¿¡¼­ ¾²·¯Á³½À´Ï´Ù.
+                      {'\uD83D\uDC80'} ë‚˜ë¨¸ì§€ 39ëª…ì˜ ì„ ìˆ˜ëŠ” ë‹¬ë¦¬ë˜ ìë¦¬ì—ì„œ ì“°ëŸ¬ì¡ŒìŠµë‹ˆë‹¤.
                     </p>
                   </div>
                 )}
@@ -489,38 +482,35 @@ const App: React.FC = () => {
                 onClick={initRace} 
                 className="mt-4 w-full py-4 bg-yellow-400 text-slate-950 font-black rounded-2xl hover:bg-yellow-300 transition-all uppercase text-base shadow-xl active:scale-95"
               >
-                »õ °æ±â ÁØºñÇÏ±â (Next)
+                ìƒˆ ê²½ê¸° ì¤€ë¹„í•˜ê¸° (Next)
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* ================= MODAL: ¼±¼ö ÀÌ¸§¾²±â / ¸í´Ü ÀÔ·Â ================= */}
       {showNameModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md pointer-events-auto animate-in fade-in duration-200">
-          <div className="bg-slate-900 border border-yellow-400/40 w-full max-w-lg rounded-[2.5rem] shadow-2xl p-6 md:p-7 flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md pointer-events-auto">
+          <div className="bg-slate-900 border border-yellow-400/40 w-full max-w-lg rounded-[2.5rem] shadow-2xl p-6 md:p-7 flex flex-col max-h-[85vh]">
             
-            {/* Modal Header */}
             <div className="flex justify-between items-start mb-4 pb-3 border-b border-slate-800">
               <div>
                 <h3 className="text-white font-black text-xl flex items-center gap-2">
-                  <span>??</span>
-                  <span>¼±¼ö ÀÌ¸§ ¾²±â (ÃÑ {participantCount}¸í)</span>
+                  <span>{'\u270D\uFE0F'}</span>
+                  <span>ì„ ìˆ˜ ì´ë¦„ ì“°ê¸° (ì´ {participantCount}ëª…)</span>
                 </h3>
                 <p className="text-slate-400 text-xs font-medium mt-1">
-                  Âü°¡ ¼±¼öµéÀÇ ÀÌ¸§À» Á÷Á¢ ÀÔ·ÂÇÏ°Å³ª ¸í´ÜÀ» ÇÑ ¹ø¿¡ ºÙ¿©³ÖÀ¸¼¼¿ä.
+                  ì°¸ê°€ ì„ ìˆ˜ë“¤ì˜ ì´ë¦„ì„ ì§ì ‘ ì…ë ¥í•˜ê±°ë‚˜ ëª…ë‹¨ì„ í•œ ë²ˆì— ë¶™ì—¬ë„£ìœ¼ì„¸ìš”.
                 </p>
               </div>
               <button 
                 onClick={() => setShowNameModal(false)}
                 className="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm"
               >
-                ?
+                {'\u2715'}
               </button>
             </div>
 
-            {/* Tabs */}
             <div className="flex gap-2 mb-4 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
               <button
                 onClick={() => setModalTab('individual')}
@@ -530,7 +520,7 @@ const App: React.FC = () => {
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                Á÷Á¢ ÇÏ³ª¾¿ ÀÔ·Â
+                ì§ì ‘ í•˜ë‚˜ì”© ì…ë ¥
               </button>
               <button
                 onClick={() => setModalTab('batch')}
@@ -540,11 +530,10 @@ const App: React.FC = () => {
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                ÀÏ°ı ºÙ¿©³Ö±â (½°Ç¥/¿£ÅÍ)
+                ì¼ê´„ ë¶™ì—¬ë„£ê¸° (ì‰¼í‘œ/ì—”í„°)
               </button>
             </div>
 
-            {/* Tab 1: Individual Inputs */}
             {modalTab === 'individual' && (
               <div className="space-y-2.5 overflow-y-auto pr-1 flex-1 custom-scrollbar min-h-[220px]">
                 {runnerNames.slice(0, participantCount).map((name, idx) => (
@@ -560,7 +549,7 @@ const App: React.FC = () => {
                         updated[idx] = e.target.value;
                         setRunnerNames(updated);
                       }}
-                      placeholder={`${idx + 1}¹ø ¼±¼ö ÀÌ¸§ ÀÔ·Â...`}
+                      placeholder={`${idx + 1}ë²ˆ ì„ ìˆ˜ ì´ë¦„ ì…ë ¥...`}
                       className="w-full bg-slate-900 border border-slate-700 focus:border-yellow-400 px-3.5 py-2 rounded-xl text-white text-xs font-bold outline-none transition-all placeholder:text-slate-500"
                     />
                   </div>
@@ -568,16 +557,15 @@ const App: React.FC = () => {
               </div>
             )}
 
-            {/* Tab 2: Batch Paste Textarea */}
             {modalTab === 'batch' && (
               <div className="flex-1 flex flex-col min-h-[220px]">
                 <p className="text-slate-400 text-xs mb-2">
-                  ½°Ç¥(,), ÁÙ¹Ù²Ş µîÀ¸·Î ±¸ºĞµÈ ÀÌ¸§À» ºÙ¿©³ÖÀ¸¼¼¿ä:
+                  ì‰¼í‘œ(,), ì¤„ë°”ê¿ˆ ë“±ìœ¼ë¡œ êµ¬ë¶„ëœ ì´ë¦„ì„ ë¶™ì—¬ë„£ìœ¼ì„¸ìš”:
                 </p>
                 <textarea
                   value={batchText}
                   onChange={(e) => setBatchText(e.target.value)}
-                  placeholder="¿¹: È«±æµ¿, ÀÌ¼ø½Å, °­°¨Âù, À¯°ü¼ø, ±èÀ¯½Å, Àåº¸°í..."
+                  placeholder="ì˜ˆ: í™ê¸¸ë™, ì´ìˆœì‹ , ê°•ê°ì°¬, ìœ ê´€ìˆœ, ê¹€ìœ ì‹ , ì¥ë³´ê³ ..."
                   rows={7}
                   className="w-full flex-1 bg-slate-950 border border-slate-700 focus:border-yellow-400 p-3.5 rounded-2xl text-white text-xs font-medium outline-none transition-all placeholder:text-slate-600 resize-none"
                 />
@@ -585,25 +573,24 @@ const App: React.FC = () => {
                   onClick={handleApplyBatchText}
                   className="mt-3 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 text-xs font-black rounded-xl transition-all shadow-md"
                 >
-                  ¸í´Ü ÆÄ½ÌÇÏ¿© Àû¿ëÇÏ±â
+                  ëª…ë‹¨ íŒŒì‹±í•˜ì—¬ ì ìš©í•˜ê¸°
                 </button>
               </div>
             )}
 
-            {/* Quick Actions Footer */}
             <div className="mt-4 pt-3 border-t border-slate-800 flex flex-wrap justify-between items-center gap-2">
               <div className="flex gap-2">
                 <button
                   onClick={handleAutoFillNumbers}
                   className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold rounded-lg transition-all"
                 >
-                  1~{participantCount}¹ø ¹øÈ£Ã¤¿ì±â
+                  1~{participantCount}ë²ˆ ë²ˆí˜¸ì±„ìš°ê¸°
                 </button>
                 <button
                   onClick={handleRandomizeNames}
                   className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold rounded-lg transition-all"
                 >
-                  ?? ·£´ı ´Ğ³×ÀÓ
+                  {'\uD83C\uDFB2'} ëœë¤ ë‹‰ë„¤ì„
                 </button>
               </div>
 
@@ -611,7 +598,7 @@ const App: React.FC = () => {
                 onClick={() => setShowNameModal(false)}
                 className="px-5 py-2.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-yellow-400/20 active:scale-95 transition-all"
               >
-                ÀúÀå ¹× ´İ±â
+                ì €ì¥ ë° ë‹«ê¸°
               </button>
             </div>
 
@@ -619,7 +606,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Custom Scrollbar CSS */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); border-radius: 12px; }

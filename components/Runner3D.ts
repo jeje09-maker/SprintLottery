@@ -69,8 +69,8 @@ export const createRunner3D = (shirtColorHex: string, id: number, name?: string)
     nameCtx.font = 'bold 26px sans-serif';
     nameCtx.textAlign = 'center';
     nameCtx.textBaseline = 'middle';
-    const displayName = name ? `${id}. ${name}` : `${id}¹ø`;
-    nameCtx.fillText(displayName.length > 9 ? displayName.slice(0, 8) + '¡¦' : displayName, 128, 32);
+    const displayName = name ? `${id}. ${name}` : `${id}`;
+    nameCtx.fillText(displayName.length > 9 ? displayName.slice(0, 8) + '\u2026' : displayName, 128, 32);
   }
   const nameTexture = new THREE.CanvasTexture(nameCanvas);
   nameTexture.colorSpace = THREE.SRGBColorSpace;
@@ -154,7 +154,7 @@ export const createRunner3D = (shirtColorHex: string, id: number, name?: string)
       rightLeg.root.rotation.set(-0.2, 0, 0.3);
       leftLeg.lower.rotation.set(0.2, 0, 0);
       rightLeg.lower.rotation.set(0.2, 0, 0);
-      nameSprite.position.set(0, 3.5, 0); // Drop nameplate lower
+      nameSprite.position.set(0, 3.5, 0);
       return;
     }
 
